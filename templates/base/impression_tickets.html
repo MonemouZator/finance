@@ -1,0 +1,156 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block styl_parent %}
+<title>Impression Tickets</title>
+<link rel="stylesheet" href="{% static 'base/plugins/fontawesome-free/css/all.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
+
+<style>
+    body { font-family: Arial, sans-serif; font-size: 10px; }
+
+    /* ✅ Agrandir le menu et le header */
+    .main-header, .main-sidebar {
+        font-size: 1.1rem;       /* taille du texte plus grande */
+        font-weight: bold;
+    }
+    .main-header .navbar, .main-sidebar {
+        min-height: 60px;        /* header plus haut */
+    }
+    .nav-sidebar .nav-link {
+        font-size: 1rem;         /* texte des menus */
+        padding: 12px 15px;      /* plus d’espace */
+    }
+    .nav-sidebar .nav-icon {
+        font-size: 1.2rem;       /* icônes plus grandes */
+        margin-right: 8px;
+    }
+    .brand-link {
+        font-size: 1.3rem;       /* texte du logo */
+        font-weight: bold;
+    }
+
+    /* Bouton imprimer */
+    .print-btn { 
+        margin: 10px; 
+        padding: 5px 12px; 
+        font-size: 12px; 
+    }
+
+    /* Container des tickets en grille */
+    .tickets-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0;
+    }
+
+    /* Ticket individuel */
+    .ticket-card {
+        width: 48%; /* 2 tickets par ligne */
+        height: 24%; /* 4 tickets par colonne = 8 tickets/page */
+        border: 1px solid #444;
+        border-radius: 5px;
+        padding: 8px;
+        box-sizing: border-box;
+        background: #fff;
+        font-size: 10px;
+        margin-bottom: 2%;
+        page-break-inside: avoid;
+    }
+
+    .ticket-card hr { border-top: 1px dashed #888; margin: 5px 0; }
+
+    /* Tableau des jours */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 5px; }
+    td { border: 1px solid #444; text-align: center; width: 12px; height: 18px; font-weight: bold; }
+
+    /* Totaux */
+    .totals {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 5px;
+        font-size: 11px;
+        font-weight: bold;
+        padding: 0 5px;
+    }
+
+    /* Impression */
+    @media print {
+        .print-btn, .main-footer, .main-header, .main-sidebar { display: none; }
+        .tickets-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .ticket-card {
+            width: 48%; 
+            height: 24%;
+            page-break-inside: avoid;
+            box-shadow: none;
+            border: 1px solid #000;
+            margin-bottom: 2%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<body class="hold-transition sidebar-mini">{% endblock %}
+
+{% block contenu %}
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Bouton Imprimer -->
+        <button class="print-btn btn btn-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimer
+        </button>
+
+        <div class="tickets-container">
+            {% for ticket in tickets %}
+            <div class="ticket-card">
+                <div style="text-align:center; font-size:12px; font-weight:bold;">
+                    Roger Tontine (Regardons Mieux)<br>
+                     622555079/ 625284566
+                </div>
+                <hr>
+                <div style="font-size:11px; font-weight:bold;">
+                    N°: {{ ticket.id|stringformat:"03d" }} &nbsp;&nbsp; Nom: {{ ticket.client }}
+                </div>
+
+                <table>
+                    <tr>
+                        {% for jour in jours_ligne1 %}
+                        <td>{% if jour <= ticket.jours_verse %}X{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for jour in jours_ligne2 %}
+                        <td>{% if jour <= ticket.jours_verse %}X{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                    <tr>
+                        {% for jour in jours_ligne3 %}
+                        <td>{% if jour <= ticket.jours_verse %}X{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+                </table>
+
+                <div class="totals">
+                    <span>Mise : {{ ticket.montant_journalier|floatformat:0 }} GNF</span>
+                    <span>Dépôt : {{ ticket.total_verse|floatformat:0 }} GNF</span>
+                    <span>Retrait : {{ ticket.total_retirable|floatformat:0 }} GNF</span>
+                   
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripte %}
+<script src="{% static 'base/plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'base/js/adminlte.min.js' %}"></script>
+{% endblock %}

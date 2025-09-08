@@ -1,0 +1,56 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block styl_parent %}
+<title>Utilisateurs Masculins</title>
+<link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
+{% endblock %}
+
+{% block body %}
+<body class="hold-transition sidebar-mini">
+{% endblock %}
+
+{% block contenu %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <h1>Liste des utilisateurs masculins</h1>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+            <table class="table table-bordered table-striped">
+                <thead class="bg-primary">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Fonction</th>
+                        <th>Photo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in utilisateurs %}
+                    <tr>
+                        <td>{{ u.first_name }}</td>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>{{ u.fonction }}</td>
+                        <td>
+                            {% if u.photo %}
+                                <img src="{{ u.photo.url }}" width="50">
+                            {% else %}
+                                Pas de photo
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5">Aucun utilisateur masculin trouvé.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

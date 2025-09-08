@@ -1,0 +1,226 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block styl_parent %}
+<title>Charges | Accueil</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+<link rel="stylesheet" href="{% static 'base/plugins/fontawesome-free/css/all.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/plugins/datatables-responsive/css/responsive.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/plugins/datatables-buttons/css/buttons.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
+{% endblock %}
+
+{% block body %}
+<body class="hold-transition sidebar-mini">
+{% endblock %}
+
+{% block contenu %}
+<div class="content-wrapper">
+    <section class="content-header">
+        <div class="container-fluid">
+            <h1>LES CHARGES</h1>
+        </div>
+    </section>
+
+    <section class="content">
+        <div class="container-fluid">
+
+            <!-- Filtrage par date -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" class="form-inline">
+                        <label>Date début :</label>
+                        <input type="date" name="date_debut" value="{{ date_debut }}" class="form-control mx-2">
+                        <label>Date fin :</label>
+                        <input type="date" name="date_fin" value="{{ date_fin }}" class="form-control mx-2">
+                        <button type="submit" class="btn btn-primary">Filtrer</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+
+                <!-- Bouton Ajout -->
+                <div class="card-header">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ajoutModal">
+                        Ajouter une charge
+                    </button>
+                </div>
+
+                <!-- Modal Ajout -->
+                <div class="modal fade" id="ajoutModal" tabindex="-1" role="dialog">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary">
+                                <h5 class="modal-title">Enregistrement d'une charge</h5>
+                                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                            </div>
+                            <form action="{% url 'ajout_charge' %}" method="post">
+                                {% csrf_token %}
+                                <div class="modal-body">
+                                    <div class="form-group">
+                                        <label>Date :</label>
+                                        <input type="date" name="date" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Libellé :</label>
+                                        <input type="text" name="lebelle" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Montant :</label>
+                                        <input type="number" name="solde" class="form-control" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Observation :</label>
+                                        <input type="text" name="observe" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tableau des charges -->
+                <div class="card-body table-responsive">
+                    <table id="example1" class="table table-bordered table-striped">
+                        <thead class="bg-primary">
+                            <tr>
+                                <th>Date</th>
+                                <th>Libellé</th>
+                                <th>Montant</th>
+                                <th>Observation</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for charge in charges %}
+                            <tr>
+                                <td>{{ charge.date }}</td>
+                                <td>{{ charge.libelle }}</td>
+                                <td>{{ charge.montant|floatformat:0 }} GNF</td>
+                                <td>{{ charge.Observation }}</td>
+                                <td>
+                                    <!-- Modifier -->
+                                    <button class="btn btn-outline-primary btn-sm" data-toggle="modal" data-target="#modifie{{ charge.id }}">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+
+                                    <!-- Modal Modification -->
+                                    <div class="modal fade" id="modifie{{ charge.id }}" tabindex="-1" role="dialog">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-primary">
+                                                    <h5 class="modal-title">Modifier une charge</h5>
+                                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                                </div>
+                                                <form action="{% url 'modifier_charge' pk=charge.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body">
+                                                        <div class="form-group">
+                                                            <label>Date :</label>
+                                                            <input type="date" name="date" value="{{ charge.date }}" class="form-control" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label>Libellé :</label>
+                                                            <input type="text" name="lebelle" value="{{ charge.libelle }}" class="form-control" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label>Montant :</label>
+                                                            <input type="number" name="solde" value="{{ charge.montant }}" class="form-control" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label>Observation :</label>
+                                                            <input type="text" name="observe" value="{{ charge.Observation }}" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                                                        <button type="submit" class="btn btn-primary">Modifier</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Supprimer -->
+                                    <button class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#supprime{{ charge.id }}">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+
+                                    <!-- Modal Suppression -->
+                                    <div class="modal fade" id="supprime{{ charge.id }}" tabindex="-1" role="dialog">
+                                        <div class="modal-dialog" role="document">
+                                            <div class="modal-content">
+                                                <div class="modal-header bg-danger">
+                                                    <h5 class="modal-title">Supprimer une charge</h5>
+                                                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                                                </div>
+                                                <form action="{% url 'supprimer_charge' pk=charge.id %}" method="post">
+                                                    {% csrf_token %}
+                                                    <div class="modal-body">
+                                                        <p>Voulez-vous vraiment supprimer : <strong>{{ charge.libelle }}</strong> ?</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Non</button>
+                                                        <button type="submit" class="btn btn-danger">Oui</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">Aucune charge trouvée pour cette période.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-info">
+                                <th colspan="2">TOTAL GENERAL</th>
+                                <th>{{ total_general|floatformat:0 }} GNF</th>
+                                <th colspan="2"></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripte %}
+<script src="{% static 'base/plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-responsive/js/dataTables.responsive.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-responsive/js/responsive.bootstrap4.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-buttons/js/dataTables.buttons.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-buttons/js/buttons.bootstrap4.min.js' %}"></script>
+<script src="{% static 'base/plugins/jszip/jszip.min.js' %}"></script>
+<script src="{% static 'base/plugins/pdfmake/pdfmake.min.js' %}"></script>
+<script src="{% static 'base/plugins/pdfmake/vfs_fonts.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-buttons/js/buttons.html5.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-buttons/js/buttons.print.min.js' %}"></script>
+<script src="{% static 'base/plugins/datatables-buttons/js/buttons.colVis.min.js' %}"></script>
+<script src="{% static 'base/js/adminlte.min.js' %}"></script>
+
+<script>
+  $(function () {
+    $("#example1").DataTable({
+      "responsive": true, "lengthChange": false, "autoWidth": false,
+      "buttons": []
+    });
+  });
+</script>
+{% endblock %}

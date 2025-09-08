@@ -1,0 +1,106 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block styl_parent %}
+<title>Tickets Retirés | Accueil</title>
+<link rel="stylesheet" href="{% static 'base/plugins/fontawesome-free/css/all.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
+{% endblock %}
+
+{% block body %}<body class="hold-transition sidebar-mini">{% endblock %}
+
+{% block contenu %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1>TICKETS RETIRÉS</h1>
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+
+      <!-- Champ de recherche -->
+      <div class="form-group">
+        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher par client...">
+      </div>
+
+      <div class="card">
+        <div class="card-body table-responsive">
+          <table class="table table-bordered table-striped">
+            
+            <thead class="bg-primary">
+            <tr>
+              <th>N°</th>
+              <th>Client</th>
+              <th>Photo</th>
+              <th>Montant Journalier</th>
+              <th>Jours Versés</th>
+              <th>Total Retiré</th>
+              <th>Commission ({{ commission_taux }}%)</th>
+              <th>Date Retrait</th>
+            </tr>
+            </thead>
+            <tbody>
+              {% for ticket in tickets_retire %}
+              <tr>
+                <td>{{ ticket.id|stringformat:"03d" }}</td>
+                <td>{{ ticket.client }}</td>
+                <td>
+                  {% if ticket.photo %}
+                    <img src="{{ ticket.photo.url }}" width="50">
+                  {% else %}
+                    Pas de photo
+                  {% endif %}
+                </td>
+                <td>{{ ticket.montant_journalier|floatformat:0 }} GNF</td>
+                <td>{{ ticket.jours_verse }}/{{ ticket.nombre_jours_total }}</td>
+                <td>{{ ticket.total_retiré|floatformat:0 }} GNF</td>
+                <td>{{ ticket.commission|floatformat:0 }} GNF</td>
+                <td>{{ ticket.date_retrait|date:"d/m/Y H:i" }}</td>
+              </tr>
+              {% endfor %}
+
+              <!-- Ligne des totaux -->
+              <tr class="bg-info font-weight-bold">
+                <td colspan="5" class="text-right">TOTAL :</td>
+                <td>{{ total_general|floatformat:0 }} GNF</td>
+                <td>{{ total_commission|floatformat:0 }} GNF</td>
+                <td></td>
+              </tr>
+            </tbody>
+
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripte %}
+<script src="{% static 'base/plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'base/js/adminlte.min.js' %}"></script>
+
+<!-- Filtre automatique -->
+<script>
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('keyup', function() {
+    const filter = searchInput.value.toLowerCase();
+    const rows = document.querySelectorAll('table tbody tr');
+
+    rows.forEach(row => {
+      const client = row.cells[1].textContent.toLowerCase(); // nom du client
+      const numero = row.cells[0].textContent.toLowerCase(); // numéro du ticket
+      if(client.includes(filter) || numero.includes(filter)){
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  });
+</script>
+
+{% endblock %}

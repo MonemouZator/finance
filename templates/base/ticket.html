@@ -1,0 +1,234 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block styl_parent %}
+<title>Tickets | Accueil</title>
+<link rel="stylesheet" href="{% static 'base/plugins/fontawesome-free/css/all.min.css' %}">
+<link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
+{% endblock %}
+
+{% block body %}<body class="hold-transition sidebar-mini">{% endblock %}
+
+{% block contenu %}
+<div class="content-wrapper">
+  <section class="content-header">
+    <div class="container-fluid">
+      <h1>TICKETS</h1>
+    </div>
+  </section>
+
+  <!-- Messages -->
+  <div class="container-fluid">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#ajoutModal">
+            <i class="fas fa-plus"></i> Adhérent
+          </button>
+          <div>
+            <a href="{% url 'liste_tickets_retire' %}" class="btn btn-secondary">
+              <i class="fas fa-archive"></i> Corbeille
+            </a>
+            <a href="{% url 'imprimer_tickets' %}" target="_blank" class="btn btn-success">
+              <i class="fas fa-print"></i>Voir
+            </a>
+          </div>
+        </div>
+
+        <!-- Modal Ajout -->
+        <div class="modal fade" id="ajoutModal" tabindex="-1">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header bg-primary">
+                <h5 class="modal-title">Nouveau Ticket</h5>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+              </div>
+              <form action="{% url 'ajout_ticket' %}" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                  <div class="form-group">
+                    <label>Client :</label>
+                    <input type="text" class="form-control" name="client" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Montant Journalier :</label>
+                    <input type="number" class="form-control" name="montant_journalier" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Photo :</label>
+                    <input type="file" class="form-control" name="photo">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+                  <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tableau des tickets -->
+        <div class="card-body table-responsive">
+          <!-- Champ de recherche -->
+          <div class="form-group">
+            <form method="get" action="" class="d-flex">
+              <input type="text" name="q" value="{{ query }}" class="form-control mr-2" placeholder="Rechercher par client ou numéro...">
+              <button type="submit" class="btn btn-primary">Rechercher</button>
+            </form>
+          </div>
+
+          <table class="table table-bordered table-striped">
+            <thead class="bg-primary">
+              <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Photo</th>
+                <th>Montant Journalier</th>
+                <th>Jours Versés</th>
+                <th>Total Versé</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ticket in tickets %}
+              <tr>
+                <td>{{ ticket.id|stringformat:"03d" }}</td>
+                <td>{{ ticket.client }}</td>
+                <td>
+                  {% if ticket.photo %}
+                    <img src="{{ ticket.photo.url }}" width="50">
+                  {% else %}
+                    Pas de photo
+                  {% endif %}
+                </td>
+                <td>{{ ticket.montant_journalier|floatformat:0 }} GNF</td>
+                <td>{{ ticket.jours_verse }}/{{ ticket.nombre_jours_total }}</td>
+                <td>{{ ticket.total_verse|floatformat:0 }} GNF</td>
+                <td class="d-flex flex-wrap">
+
+                  {% if ticket.jours_verse < ticket.nombre_jours_total %}
+                  <a href="{% url 'ajouter_jour_ticket' ticket.id %}" class="btn btn-success btn-sm mr-1 mb-1" title="Ajouter Versement">
+                    <i class="fas fa-plus"></i>
+                  </a>
+                  {% endif %}
+
+                  {% if ticket.jours_verse >= 2 and not ticket.retrait_effectue %}
+                  <a href="{% url 'retirer_ticket' ticket.id %}" class="btn btn-warning btn-sm mr-1 mb-1" title="Retrait">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                  </a>
+                  {% endif %}
+
+                  <!-- Modifier -->
+                  <button class="btn btn-outline-primary btn-sm mr-1 mb-1" data-toggle="modal" data-target="#mod{{ ticket.id }}">
+                    <i class="fas fa-edit"></i>
+                  </button>
+
+                  <!-- Modal Modifier -->
+                  <div class="modal fade" id="mod{{ ticket.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header bg-primary">
+                          <h5 class="modal-title">Modifier Ticket</h5>
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form action="{% url 'modifier_ticket' pk=ticket.id %}" method="post" enctype="multipart/form-data">
+                          {% csrf_token %}
+                          <div class="modal-body">
+                            <input type="text" class="form-control mb-2" name="client" value="{{ ticket.client }}" required>
+                            <input type="number" class="form-control mb-2" name="montant_journalier" value="{{ ticket.montant_journalier }}" required>
+                            <input type="file" class="form-control mb-2" name="photo">
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-primary">Modifier</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="7" class="text-center">Aucun ticket trouvé</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="bg-info">
+
+
+                <th colspan="5">TOTAL GENERAL VERSÉ</th>
+                <th>{{ total_verse|floatformat:0 }} GNF</th>
+              </tr>
+              <tr class="bg-success">
+
+
+                <th colspan="5">TOTAL RETIRABLE</th>
+                <th>{{ total_retirable|floatformat:0 }} GNF</th>
+              </tr>
+              <tr class="bg-warning">
+
+              
+                <th colspan="5">TOTAL COMMISSION</th>
+                <th>{{ total_commission|floatformat:0 }} GNF</th>
+              </tr>
+            </tfoot>
+          </table>
+
+          <!-- Pagination -->
+          <div class="d-flex justify-content-center mt-3">
+            <nav aria-label="Pagination">
+              <ul class="pagination">
+                {% if tickets.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="?q={{ query }}&page={{ tickets.previous_page_number }}">Précédent</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                {% endif %}
+
+                {% for num in tickets.paginator.page_range %}
+                  {% if tickets.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                  {% else %}
+                    <li class="page-item"><a class="page-link" href="?q={{ query }}&page={{ num }}">{{ num }}</a></li>
+                  {% endif %}
+                {% endfor %}
+
+                {% if tickets.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?q={{ query }}&page={{ tickets.next_page_number }}">Suivant</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripte %}
+<script src="{% static 'base/plugins/jquery/jquery.min.js' %}"></script>
+<script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+<script src="{% static 'base/js/adminlte.min.js' %}"></script>
+{% endblock %}

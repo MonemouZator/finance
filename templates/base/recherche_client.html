@@ -1,0 +1,71 @@
+{% extends "base/index.html" %}
+{% load static %}
+{% block content %}
+<div class="container mt-4">
+  <h3>🔍 Recherche Client</h3>
+  <form method="get" class="mb-4">
+    <div class="input-group">
+      <input type="text" name="q" class="form-control" placeholder="Entrer le numéro du client" value="{{ request.GET.q }}">
+      <button class="btn btn-primary" type="submit">Rechercher</button>
+    </div>
+  </form>
+
+  {% if client %}
+    <div class="card p-3 mb-4">
+      <div class="row">
+        <div class="col-md-3">
+          {% if client.photo %}
+            <img src="{{ client.photo.url }}" class="img-fluid rounded" alt="photo client">
+          {% else %}
+            <img src="https://via.placeholder.com/150" class="img-fluid rounded" alt="photo client">
+          {% endif %}
+        </div>
+        <div class="col-md-9">
+          <h4>{{ client.nom }} ({{ client.numero }})</h4>
+          <p>📞 {{ client.telephone }}</p>
+          <table class="table table-bordered mt-3">
+            <tr>
+              <th>Libellé</th>
+              <th>Valeur</th>
+            </tr>
+            <tr>
+              <td>Total versé</td>
+              <td>{{ total_verse|floatformat:0 }} GNF</td>
+            </tr>
+            <tr>
+              <td>Total retirable</td>
+              <td>{{ total_retirable|floatformat:0 }} GNF</td>
+            </tr>
+            <tr>
+              <td>Total commission</td>
+              <td>{{ total_commission|floatformat:0 }} GNF</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <h5>📌 Détails des versements</h5>
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Jour</th>
+          <th>Montant</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in versements %}
+          <tr>
+            <td>{{ v.date|date:"d/m/Y" }}</td>
+            <td>{{ v.montant|floatformat:0 }} GNF</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="2">Aucun versement trouvé.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% elif request.GET.q %}
+    <div class="alert alert-danger">Aucun client trouvé avec ce numéro.</div>
+  {% endif %}
+</div>
+{% endblock %}
