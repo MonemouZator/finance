@@ -1,5 +1,8 @@
 
 from pathlib import Path
+import os
+from decouple import config
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -9,12 +12,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(!8slz4%t(^&uk_)4urexvz)-)p*0a0rl7cbwa%!_%cquapi_9'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'finance-vc2v.onrender.com']
+
 
 
 # Application definition
@@ -73,16 +77,34 @@ WSGI_APPLICATION = 'boutique.wsgi.application'
 # }
 
 # Configuration de SGBD avec Mysql mais par defaut python utilise sqlite
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'boutique', # le nom de notre projet
-        'USER': 'root', # le nom de l'admin sur wampserver
-        'PASSWORD':"", # Le mot de passe s'il existe
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'boutique', # le nom de notre projet
+#         'USER': 'root', # le nom de l'admin sur wampserver
+#         'PASSWORD':"", # Le mot de passe s'il existe
 
-    }
+#     }
+# }
+
+DATABASES={
+    'default':dj_database_url.parse(config('DATABASE_URL'))
 }
 
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': config('CLOUDINARY_API_KEY'),
+    'API_SECRET': config('CLOUDINARY_API_SECRET')
+}
+
+import cloudinary
+cloudinary.config(
+    cloud_name=config('CLOUDINARY_CLOUD_NAME'),
+    api_key=config('CLOUDINARY_API_KEY'),
+    api_secret=config('CLOUDINARY_API_SECRET')
+)
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -102,7 +124,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -118,21 +139,26 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
-MEDIA_URL='media/'
+# GESTION LOCALE DES FICHIERS MEDIA
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-MEDIA_ROOT='media'
+# Stockage local des fichiers
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_DIRS = [BASE_DIR / 'static']
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
-
-STATICFILES_DIRS=[
-    BASE_DIR / 'static'
-]
-
+WHITENOISE_SKIP_COMPRESS = True
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
+
+
+# Paramètres relatifs aux cookies en mode développement
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'finance.Administrateur'
