@@ -32,14 +32,15 @@ urlpatterns = [
     path('tickets/supprimer/<int:pk>/', views.supprimer_ticket, name='supprimer_ticket'),
     path('tickets/ajouter-jour/<int:pk>/', views.ajouter_jour_ticket, name='ajouter_jour_ticket'),
     path('tickets/retrait/<int:pk>/', views.retirer_ticket, name='retirer_ticket'),
-    #path('recherche-client/', views.recherche_client, name='recherche_client'),
-    # path('detail-client/<int:pk>/', views.detail_client, name='detail_client'),
     path('imprimer-tickets/', views.impression_tickets, name='imprimer_tickets'),
     path('tickets/retire/', views.liste_tickets_retire, name='liste_tickets_retire'),
     path('compte-hebdo/creer/', views.creer_compte_hebdo, name='creer_compte_hebdo'),
     path('compte-hebdo/', views.liste_compte_hebdo, name='liste_compte_hebdo'),
     # boutique/urls.py
-    path('register/', views.register_view, name='register'),
-
-
+    path('administrateurs/ajouter/', views.ajout_administrateur, name='ajouter_administrateur'),  # Vue pour ajouter un administrateur
+    path('profil-utilisateur/',views.profil_user,name='profil'),
+    path('pw/utilisateur/change-password/', views.change_password, name='change_password'),
+    path('ticket/<int:ticket_id>/credit/', views.ajouter_credit, name='ajouter_credit'),
+    path('clients/credit/', views.liste_clients_credit, name='liste_clients_credit'),
+   
 ]

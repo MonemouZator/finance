@@ -6,7 +6,8 @@ from django.utils import timezone
 from datetime import datetime
 from django.contrib.auth import authenticate, login,logout
 from django.core.exceptions import ValidationError
-from .models import ValeurAjoutee, Operation, CompteCredit, CompteDebit,TicketRetire,CompteHebdomadaire
+from .models import ValeurAjoutee, Operation, CompteCredit, CompteDebit,TicketRetire,CompteHebdomadaire,TicketCredit
+from finance.models import Administrateur
 
 
 def page_accueil(request):
@@ -343,15 +344,20 @@ def ajouter_jour_ticket(request, pk):
         messages.error(request, str(e))
     return redirect('liste_tickets')
 
-# Retirer après au moins 2 jours
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib import messages
+from .models import Ticket, TicketRetire
 
 def retirer_ticket(request, pk):
     ticket = get_object_or_404(Ticket, id=pk)
-    try:
-        # Vérifie la possibilité de retrait et calcule le montant
-        montant = ticket.retirer()  # gère la validation 2 jours
-        
-        # Crée une entrée dans TicketRetire
+
+    if ticket.jours_verse < 2:
+        messages.error(request, "Le retrait n'est possible qu'après avoir versé au moins 2 jours.")
+        return redirect('liste_tickets')
+
+    if request.method == "POST":
+        # Créer le ticket retiré
         TicketRetire.objects.create(
             client=ticket.client,
             photo=ticket.photo,
@@ -359,47 +365,19 @@ def retirer_ticket(request, pk):
             nombre_jours_total=ticket.nombre_jours_total,
             jours_verse=ticket.jours_verse,
             date_debut=ticket.date_debut,
-            total_retiré=montant
+            total_retiré=ticket.total_verse,
+            total_credit=ticket.total_credit
         )
-
-        # Supprime le ticket original de la table principale
         ticket.delete()
-
-        messages.success(request, f"{ticket.client} a retiré {montant} GNF et le ticket a été archivé !")
-
-    except ValidationError as e:
-        messages.error(request, str(e))
-    except Exception as e:
-        messages.error(request, str(e))
+        messages.success(request, f"{ticket.client} a retiré {ticket.total_verse} GNF !")
+        return redirect('liste_tickets')
     
+    # Si accès direct GET, rediriger vers la liste
     return redirect('liste_tickets')
 
 
-# def recherche_client(request):
-#     client = None
-#     versements = None
-#     total_verse = total_retirable = total_commission = 0
 
-#     query = request.GET.get('q')
-#     if query:
-#         try:
-#             client = Ticket.objects.get(numero=query)  # recherche par numéro
-#             versements = Ticket.objects.filter(client=client)
 
-#             # calcul des totaux
-#             total_verse = sum(v.montant for v in versements)
-#             total_commission = client.commission if client.est_complet else 0
-#             total_retirable = total_verse - total_commission
-#         except Ticket.DoesNotExist:
-#             client = None
-
-#     return render(request, 'base/recherche_client.html', {
-#         'client': client,
-#         'versements': versements,
-#         'total_verse': total_verse,
-#         'total_retirable': total_retirable,
-#         'total_commission': total_commission,
-#     })
 
 
 def impression_tickets(request):
@@ -420,28 +398,98 @@ def impression_tickets(request):
 
 
 def liste_tickets_retire(request):
-    tickets_retire = TicketRetire.objects.all()
+    tickets_retire = TicketRetire.objects.all().order_by('-date_retrait')
 
     total_general = Decimal("0.00")
     total_commission = Decimal("0.00")
-    commission_taux = Decimal("0.10")  # exemple : 10%
+    commission_taux = Decimal("1")  # 1 jour = 100%
 
+    # Préparer la liste avec total_apres_commission et commission
+    tickets_data = []
     for t in tickets_retire:
-        # Calcul du total retiré
-        t.total_retiré = t.montant_journalier * t.jours_verse
+        commission = t.montant_journalier  # 1 jour comme commission
+        total_apres_commission = t.total_retiré - commission
 
-        # Commission
-        t.commission = t.total_retiré * commission_taux
+        total_general += total_apres_commission
+        total_commission += commission
 
-        total_general += t.total_retiré
-        total_commission += t.commission
+        tickets_data.append({
+            "ticket": t,
+            "total_apres_commission": total_apres_commission,
+            "commission": commission,
+        })
 
-    return render(request, "base/ticket_retire.html", {
-        "tickets_retire": tickets_retire,
+    context = {
+        "tickets_retire": tickets_data,
         "total_general": total_general,
         "total_commission": total_commission,
-        "commission_taux": commission_taux * 100,  # pour affichage en %
-    })
+        "commission_taux": commission_taux * 100,  # affichage dans template
+    }
+    return render(request, "base/ticket_retire.html", context)
+
+
+def ajouter_credit(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    if request.method == "POST":
+        montant = Decimal(request.POST.get("montant"))
+        total_verse = ticket.total_verse
+
+        if montant <= 0:
+            messages.error(request, "Montant invalide.")
+        elif montant > total_verse:
+            messages.error(request, "Le montant du crédit ne peut pas dépasser le total versé.")
+        else:
+            # Crée un crédit lié au ticket
+            TicketCredit.objects.create(ticket=ticket, montant=montant)
+            messages.success(request, f"Crédit de {montant} GNF ajouté pour {ticket.client}.")
+
+    return redirect("liste_tickets")  # Nom de la page liste des tickets
+
+
+# views.py
+from django.shortcuts import render
+from django.core.paginator import Paginator
+from django.db.models import Sum
+from .models import Ticket  # ou le nom correct de ton modèle
+
+from django.core.paginator import Paginator
+from django.shortcuts import render
+from decimal import Decimal
+
+def liste_clients_credit(request):
+    query = request.GET.get('q', '')
+
+    # Tous les tickets actifs (encours=True) qui ont un crédit
+    tickets_qs = Ticket.objects.filter(encours=True).prefetch_related('credits')
+
+    tickets_data = []
+    total_credit_general = Decimal("0.00")
+
+    for ticket in tickets_qs:
+        # Calcul du crédit actif
+        credit_actif = ticket.total_credit
+        if credit_actif > 0:
+            if query and query.lower() not in ticket.client.lower():
+                continue
+            tickets_data.append({
+                'ticket': ticket,
+                'credit_actif': credit_actif
+            })
+            total_credit_general += credit_actif
+
+    # Pagination
+    paginator = Paginator(tickets_data, 10)
+    page_number = request.GET.get('page')
+    tickets_page = paginator.get_page(page_number)
+
+    context = {
+        'tickets_page': tickets_page,
+        'query': query,
+        'total_credit_general': total_credit_general,
+    }
+    return render(request, 'base/clients_credit.html', context)
+
 
 
 def creer_compte_hebdo(request):
@@ -532,7 +580,7 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, "Bienvenue, vous êtes connecté avec succès.")
-            return redirect('page_acceil')  # ⚠️ Vérifie que ce nom existe dans urls.py
+            return redirect('page_acceil')  #  Vérifie que ce nom existe dans urls.py
 
             # 🔽 Redirection après login réussi
             return redirect('page_accueil')  # change selon ton projet (dashboard, accueil, etc.)
@@ -550,29 +598,161 @@ def logout_view(request):
     return redirect('page_connexion')  # redirige vers login
 
 
-# finance/views.py
+
+
+from django.contrib import messages
+from django.db import IntegrityError
+from django.shortcuts import render, redirect
+from .models import Administrateur
+
+def ajout_administrateur(request):
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip().lower()
+        password = request.POST.get("password", "").strip()
+        nom = request.POST.get("nom", "").strip()
+        prenom = request.POST.get("prenom", "").strip()
+        telephone = request.POST.get("telephone", "").strip()
+        genre = request.POST.get("genre", "")
+        date_naissance = request.POST.get("date_naissance", "")
+        lieu_naiss = request.POST.get("lieu_naiss", "").strip()
+        fonction = request.POST.get("fonction", "")
+        photo = request.FILES.get("photo")
+
+        # ✅ Vérifier si des champs obligatoires sont manquants
+        if not all([username, email, password, nom, prenom, telephone]):
+            messages.error(request, "Tous les champs obligatoires doivent être remplis.")
+            return redirect("ajouter_administrateur")
+
+        # ✅ Vérification unicité
+        if Administrateur.objects.filter(email=email).exists():
+            messages.error(request, "Cet email est déjà utilisé.")
+            return redirect("ajouter_administrateur")
+
+        if Administrateur.objects.filter(username=username).exists():
+            messages.error(request, "Cet identifiant existe déjà dans la base.")
+            return redirect("ajouter_administrateur")
+
+        if Administrateur.objects.filter(telephone=telephone).exists():
+            messages.error(request, "Ce numéro de téléphone est déjà utilisé.")
+            return redirect("ajouter_administrateur")
+
+        try:
+            administrateur = Administrateur.objects.create(
+                username=username,
+                email=email,
+                nom=nom,
+                prenom=prenom,
+                telephone=telephone,
+                genre=genre,
+                date_naissance=date_naissance or None,
+                lieu_naiss=lieu_naiss,
+                fonction=fonction,
+                photo=photo,
+            )
+            administrateur.set_password(password)  # ✅ hachage du mot de passe
+            administrateur.save()
+
+            messages.success(request, "Compte créé avec succès !")
+            return redirect("ajouter_administrateur")
+
+        except IntegrityError:
+            messages.error(request, "Erreur d’intégrité dans la base de données.")
+        except Exception as e:
+            print("Erreur :", e)
+            messages.error(request, f"Erreur lors de l'ajout : {e}")
+
+    return render(request, 'base/ajouter_administrateur.html')
+
+
+#PROFIL ET CHANGEMENTS DES INFORMATION DE L'UTILISATEUR CONNECTER
+
+def profil_user(request):
+    user = request.user  # utilisateur connecté
+
+    if request.method == "POST":
+        user.nom = request.POST.get("nom", user.nom).strip()
+        user.prenom = request.POST.get("prenom", user.prenom).strip()
+        user.email = request.POST.get("email", user.email).strip().lower()
+        user.genre = request.POST.get("sexe", user.genre)
+        user.telephone = request.POST.get("contact", user.telephone).strip()
+        user.lieu_naiss = request.POST.get("filiation", user.lieu_naiss).strip()
+
+        # Vérif email/téléphone unique
+        if Administrateur.objects.filter(email=user.email).exclude(pk=user.pk).exists():
+            messages.error(request, "Cet email est déjà utilisé.")
+            return redirect("profil")
+
+        if Administrateur.objects.filter(telephone=user.telephone).exclude(pk=user.pk).exists():
+            messages.error(request, "Ce numéro est déjà utilisé.")
+            return redirect("profil")
+
+        # Date de naissance
+        date_str = request.POST.get("date")
+        if date_str:
+            try:
+                user.date_naissance = datetime.strptime(date_str, "%Y-%m-%d").date()
+            except ValueError:
+                messages.error(request, "Format de date invalide. Utilise AAAA-MM-JJ.")
+
+        # Photo
+        if "photo" in request.FILES:
+            user.photo = request.FILES["photo"]
+
+        try:
+            user.save()
+            messages.success(request, "Votre profil a été mis à jour avec succès.")
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la sauvegarde : {e}")
+
+        return redirect("profil")
+
+    # 🔹 NE PAS passer {"user": user} (conflit avec request.user)
+    return render(request, "base/profil.html")
+
+
+#FONCTION DE CHANGEMENT DE MOT DE PASSE DE L'UTILISATEUR COURANT
+
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import logout, authenticate, login
 from django.shortcuts import render, redirect
 from django.contrib import messages
-# Correct
-from .forme import AdministrateurRegisterForm
 
-
-def register_view(request):
+@login_required
+def change_password(request):
     if request.method == "POST":
-        form = AdministrateurRegisterForm(request.POST, request.FILES)  # 🔹 POST + FILES
-        if form.is_valid():
-            user = form.save(commit=False)
+        password = request.POST.get('password')
+        confirm_password = request.POST.get('cpwd')
+        auto_login = request.POST.get('connect')  # checkbox pour rester connecté
 
-            # Définir les droits si SUPER
-            if user.fonction == 'SUPER':
-                user.is_superuser = True
-                user.is_staff = True
-            user.save()
-            messages.success(request, "Utilisateur créé avec succès !")
-            return redirect('page_connexion')  # redirige vers login
+        # Vérifications côté serveur
+        if not password or not confirm_password:
+            messages.error(request, "Veuillez remplir tous les champs.")
+            return redirect('change_password')
+
+        if password != confirm_password:
+            messages.error(request, "Les mots de passe ne sont pas identiques.")
+            return redirect('change_password')
+
+        if len(password) < 6:
+            messages.error(request, "Le mot de passe doit contenir au moins 6 caractères.")
+            return redirect('change_password')
+
+        # Changement du mot de passe
+        user = request.user
+        user.set_password(password)
+        user.save()
+
+        # Option : reconnecter l'utilisateur
+        if auto_login == "on":
+            user = authenticate(username=user.username, password=password)
+            if user is not None:
+                login(request, user)
+            messages.success(request, "Mot de passe changé avec succès, vous êtes reconnecté !")
+            return redirect('profil')
         else:
-            messages.error(request, "Veuillez corriger les erreurs ci-dessous.")
-    else:
-        form = AdministrateurRegisterForm()
-    
-    return render(request, "base/register.html", {"form": form})
+            logout(request)
+            messages.success(request, "Mot de passe changé, veuillez vous reconnecter.")
+            return redirect('page_connexion')
+
+    return render(request, 'base/recover_password.html')

@@ -37,9 +37,15 @@
             <i class="fas fa-plus"></i> Adhérent
           </button>
           <div>
+
+            <a href="{% url 'liste_clients_credit' %}" class="btn btn-secondary">
+              <i class=""></i> Credit
+            </a>
+
             <a href="{% url 'liste_tickets_retire' %}" class="btn btn-secondary">
               <i class="fas fa-archive"></i> Corbeille
             </a>
+
             <a href="{% url 'imprimer_tickets' %}" target="_blank" class="btn btn-success">
               <i class="fas fa-print"></i>Voir
             </a>
@@ -58,7 +64,7 @@
                 {% csrf_token %}
                 <div class="modal-body">
                   <div class="form-group">
-                    <label>Client :</label>
+                    <label>Adhérent :</label>
                     <input type="text" class="form-control" name="client" required>
                   </div>
                   <div class="form-group">
@@ -118,16 +124,45 @@
                 <td>{{ ticket.total_verse|floatformat:0 }} GNF</td>
                 <td class="d-flex flex-wrap">
 
+                  <!-- Ajouter Versement -->
                   {% if ticket.jours_verse < ticket.nombre_jours_total %}
                   <a href="{% url 'ajouter_jour_ticket' ticket.id %}" class="btn btn-success btn-sm mr-1 mb-1" title="Ajouter Versement">
                     <i class="fas fa-plus"></i>
                   </a>
                   {% endif %}
 
-                  {% if ticket.jours_verse >= 2 and not ticket.retrait_effectue %}
-                  <a href="{% url 'retirer_ticket' ticket.id %}" class="btn btn-warning btn-sm mr-1 mb-1" title="Retrait">
+                  <!-- Retrait avec modal avertissement crédit -->
+                  {% if ticket.jours_verse >= 2 %}
+                  <button class="btn btn-warning btn-sm mr-1 mb-1" data-toggle="modal" data-target="#avertissementCredit{{ ticket.id }}" title="Retrait">
                     <i class="fas fa-hand-holding-dollar"></i>
-                  </a>
+                  </button>
+
+                  <!-- Modal Avertissement Crédit -->
+                  <div class="modal fade" id="avertissementCredit{{ ticket.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <form method="post" action="{% url 'retirer_ticket' ticket.id %}">
+                          {% csrf_token %}
+                          <div class="modal-header bg-warning">
+                            <h5 class="modal-title">Attention Crédit</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                          </div>
+                          <div class="modal-body">
+                            {% if ticket.total_credit > 0 %}
+                              <p>Ce client a un crédit actif de <strong>{{ ticket.total_credit|floatformat:0 }} GNF</strong>.</p>
+                            {% else %}
+                              <p>Ce client n'a pas de crédit.</p>
+                            {% endif %}
+                            <p>Voulez-vous quand même effectuer le retrait ?</p>
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-warning">Oui, Retirer</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
                   {% endif %}
 
                   <!-- Modifier -->
@@ -159,6 +194,39 @@
                     </div>
                   </div>
 
+                  <!-- Ajouter Crédit -->
+                  <button class="btn btn-info btn-sm mr-1 mb-1" data-toggle="modal" data-target="#creditModal{{ ticket.id }}" title="Ajouter Crédit">
+                    <i class="fas fa-coins"></i>
+                  </button>
+
+                  <!-- Modal Ajouter Crédit -->
+                  <div class="modal fade" id="creditModal{{ ticket.id }}" tabindex="-1">
+                    <div class="modal-dialog">
+                      <div class="modal-content">
+                        <div class="modal-header bg-info">
+                          <h5 class="modal-title">Ajouter Crédit à {{ ticket.client }}</h5>
+                          <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form action="{% url 'ajouter_credit' ticket.id %}" method="post">
+                          {% csrf_token %}
+                          <div class="modal-body">
+                            <div class="form-group">
+                              <label>Montant du Crédit (≤ {{ ticket.total_verse|floatformat:0 }} GNF) :</label>
+                              <input type="number" class="form-control" name="montant" max="{{ ticket.total_verse }}" required>
+                            </div>
+                            {% if ticket.total_credit > 0 %}
+                              <p>Attention : ce client a déjà un crédit actif de <strong>{{ ticket.total_credit|floatformat:0 }} GNF</strong>.</p>
+                            {% endif %}
+                          </div>
+                          <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
+                            <button type="submit" class="btn btn-info">Ajouter Crédit</button>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+
                 </td>
               </tr>
               {% empty %}
@@ -167,22 +235,18 @@
               </tr>
               {% endfor %}
             </tbody>
+
+            <!-- Totaux -->
             <tfoot>
               <tr class="bg-info">
-
-
                 <th colspan="5">TOTAL GENERAL VERSÉ</th>
                 <th>{{ total_verse|floatformat:0 }} GNF</th>
               </tr>
               <tr class="bg-success">
-
-
                 <th colspan="5">TOTAL RETIRABLE</th>
                 <th>{{ total_retirable|floatformat:0 }} GNF</th>
               </tr>
               <tr class="bg-warning">
-
-              
                 <th colspan="5">TOTAL COMMISSION</th>
                 <th>{{ total_commission|floatformat:0 }} GNF</th>
               </tr>

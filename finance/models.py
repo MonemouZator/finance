@@ -4,9 +4,8 @@ from django.db import models
 from django.db import models
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-
+from django.contrib.auth.models import AbstractUser
 from django.db.models import Sum
-
 
 class CompteHebdomadaire(models.Model):
     numero = models.CharField(max_length=50)
@@ -41,8 +40,6 @@ class CompteHebdomadaire(models.Model):
         self.mettre_a_jour_total()
         super().save(*args, **kwargs)
 
-
-
 class ValeurAjoutee(models.Model):
     numero = models.CharField(max_length=50)
     designation = models.CharField(max_length=255)
@@ -52,8 +49,6 @@ class ValeurAjoutee(models.Model):
     def __str__(self):
         return f"{self.numero} - {self.designation} ({self.valeur})"
 
-
-
 class CompteCredit(models.Model):
     date = models.DateField()
     nom = models.CharField(max_length=255)
@@ -62,7 +57,6 @@ class CompteCredit(models.Model):
 
     def __str__(self):
         return f"-{self.nom} : {self.solde}"
-
 
 class CompteDebit(models.Model):
     date = models.DateField()
@@ -83,7 +77,6 @@ class Operation(models.Model):
     def __str__(self):
         return f"{self.libelle} : {self.montant} GNF"
 
-
 class Ticket(models.Model):
     client = models.CharField(max_length=255)
     photo = models.ImageField(upload_to='tickets/', blank=True, null=True)
@@ -96,6 +89,11 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"{self.client} - {self.montant_journalier} GNF/jour"
+    
+    @property
+    def total_credit(self):
+        """Somme des crédits actifs liés au ticket"""
+        return self.credits.aggregate(total=Sum('montant'))['total'] or 0
 
     @property
     def total_verse(self):
@@ -125,8 +123,7 @@ class Ticket(models.Model):
         
         self.retrait_effectue = True
         self.save()
-        return self.total_verse
-    
+        return self.total_verse 
 
 class TicketRetire(models.Model):
     client = models.CharField(max_length=255)
@@ -137,43 +134,34 @@ class TicketRetire(models.Model):
     date_debut = models.DateField()
     date_retrait = models.DateTimeField(default=timezone.now)
     total_retiré = models.DecimalField(max_digits=12, decimal_places=0)
+    total_credit = models.DecimalField(max_digits=12, decimal_places=0, default=0)  # <-- nouveau champ
 
     def __str__(self):
         return f"{self.client} - Retiré {self.total_retiré} GNF"
-    
 
-
-    # finance/models.py
-from django.contrib.auth.models import AbstractUser
-
-from django.contrib.auth.models import AbstractUser, Group, Permission
-from django.db import models
-
-class Administrateur(AbstractUser):
-    FONCTION_CHOICES = [
-        ('SUPER', 'Super Utilisateur'),
-        ('USER', 'Utilisateur'),
-    ]
-    fonction = models.CharField(max_length=20, choices=FONCTION_CHOICES, default='USER')
-    photo = models.ImageField(upload_to='photos/', blank=True, null=True)
-
-    # 👇 éviter le conflit avec auth.User
-    groups = models.ManyToManyField(
-        Group,
-        related_name='administrateur_set',  # change ici
-        blank=True,
-        help_text='The groups this user belongs to.',
-        verbose_name='groups',
-    )
-    user_permissions = models.ManyToManyField(
-        Permission,
-        related_name='administrateur_permissions_set',  # change ici
-        blank=True,
-        help_text='Specific permissions for this user.',
-        verbose_name='user permissions',
-    )
+class TicketCredit(models.Model):
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="credits")
+    montant = models.DecimalField(max_digits=12, decimal_places=0)
+    date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.username
+        return f"{self.ticket.client} - Crédit {self.montant} GNF"
 
+class Administrateur(AbstractUser):
+    TYPE = [
+        ('SUPER', 'ADMIN'),
+        ('USER', 'USER'),
+    ] 
+    nom = models.CharField(max_length=40, db_index=True)  # Indexé pour de meilleures performances
+    prenom = models.CharField(max_length=40, db_index=True)
+    telephone = models.CharField(max_length=15, db_index=True, unique=True)  # Unicité recommandée
+    genre = models.CharField(max_length=15)
+    date_naissance = models.DateField(null=True, blank=True)
+    lieu_naiss = models.CharField(max_length=30, db_index=True)
+    fonction = models.CharField(max_length=256, choices=TYPE, null=True)
+    photo = models.ImageField(upload_to='photos/', blank=True, null=True)
+    email = models.EmailField(max_length=191, unique=True)
+
+    def __str__(self):
+        return f"{self.nom} {self.prenom} - {self.fonction}"
 

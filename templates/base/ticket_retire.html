@@ -17,47 +17,62 @@
     </div>
   </section>
 
+  <!-- Messages -->
+  <div class="container-fluid">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
   <section class="content">
     <div class="container-fluid">
 
       <!-- Champ de recherche -->
       <div class="form-group">
-        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher par client...">
+        <input type="text" id="searchInput" class="form-control" placeholder="Rechercher par client ou numéro...">
       </div>
 
       <div class="card">
         <div class="card-body table-responsive">
           <table class="table table-bordered table-striped">
-            
             <thead class="bg-primary">
-            <tr>
-              <th>N°</th>
-              <th>Client</th>
-              <th>Photo</th>
-              <th>Montant Journalier</th>
-              <th>Jours Versés</th>
-              <th>Total Retiré</th>
-              <th>Commission ({{ commission_taux }}%)</th>
-              <th>Date Retrait</th>
-            </tr>
+              <tr>
+                <th>N°</th>
+                <th>Client</th>
+                <th>Photo</th>
+                <th>Montant Journalier</th>
+                <th>Jours Versés</th>
+                <th>Total Retiré</th>
+                <th>Commission ({{ commission_taux }}%)</th>
+                <th>Date Retrait</th>
+              </tr>
             </thead>
             <tbody>
-              {% for ticket in tickets_retire %}
+              {% for data in tickets_retire %}
               <tr>
-                <td>{{ ticket.id|stringformat:"03d" }}</td>
-                <td>{{ ticket.client }}</td>
+                <td>{{ data.ticket.id|stringformat:"03d" }}</td>
+                <td>{{ data.ticket.client }}</td>
                 <td>
-                  {% if ticket.photo %}
-                    <img src="{{ ticket.photo.url }}" width="50">
+                  {% if data.ticket.photo %}
+                    <img src="{{ data.ticket.photo.url }}" width="50">
                   {% else %}
                     Pas de photo
                   {% endif %}
                 </td>
-                <td>{{ ticket.montant_journalier|floatformat:0 }} GNF</td>
-                <td>{{ ticket.jours_verse }}/{{ ticket.nombre_jours_total }}</td>
-                <td>{{ ticket.total_retiré|floatformat:0 }} GNF</td>
-                <td>{{ ticket.commission|floatformat:0 }} GNF</td>
-                <td>{{ ticket.date_retrait|date:"d/m/Y H:i" }}</td>
+                <td>{{ data.ticket.montant_journalier|floatformat:0 }} GNF</td>
+                <td>{{ data.ticket.jours_verse }}/{{ data.ticket.nombre_jours_total }}</td>
+                <td>{{ data.total_apres_commission|floatformat:0 }} GNF</td>
+                <td>{{ data.commission|floatformat:0 }} GNF</td>
+                <td>{{ data.ticket.date_retrait|date:"d/m/Y H:i" }}</td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="8" class="text-center">Aucun ticket retiré</td>
               </tr>
               {% endfor %}
 
@@ -69,8 +84,41 @@
                 <td></td>
               </tr>
             </tbody>
-
           </table>
+
+          <!-- Pagination -->
+          <div class="d-flex justify-content-center mt-3">
+            <nav aria-label="Pagination">
+              <ul class="pagination">
+                {% if tickets_page.has_previous %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ tickets_page.previous_page_number }}">Précédent</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                {% endif %}
+
+                {% for num in tickets_page.paginator.page_range %}
+                  {% if tickets_page.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                  {% else %}
+                    <li class="page-item">
+                      <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    </li>
+                  {% endif %}
+                {% endfor %}
+
+                {% if tickets_page.has_next %}
+                  <li class="page-item">
+                    <a class="page-link" href="?page={{ tickets_page.next_page_number }}">Suivant</a>
+                  </li>
+                {% else %}
+                  <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                {% endif %}
+              </ul>
+            </nav>
+          </div>
+
         </div>
       </div>
 
@@ -84,23 +132,47 @@
 <script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'base/js/adminlte.min.js' %}"></script>
 
-<!-- Filtre automatique -->
+<!-- Filtre automatique client/numéro -->
 <script>
-  const searchInput = document.getElementById('searchInput');
-  searchInput.addEventListener('keyup', function() {
-    const filter = searchInput.value.toLowerCase();
-    const rows = document.querySelectorAll('table tbody tr');
+const searchInput = document.getElementById('searchInput');
+const rows = document.querySelectorAll('table tbody tr');
+
+function updateTotals() {
+    let totalRetire = 0;
+    let totalCommission = 0;
 
     rows.forEach(row => {
-      const client = row.cells[1].textContent.toLowerCase(); // nom du client
-      const numero = row.cells[0].textContent.toLowerCase(); // numéro du ticket
-      if(client.includes(filter) || numero.includes(filter)){
-        row.style.display = '';
-      } else {
-        row.style.display = 'none';
-      }
-    });
-  });
-</script>
+        if(row.style.display !== 'none' && !row.classList.contains('bg-info')) {
+            const montantRetire = parseFloat(row.cells[5].textContent.replace(/\s|GNF/g, '')) || 0;
+            const commission = parseFloat(row.cells[6].textContent.replace(/\s|GNF/g, '')) || 0;
 
+            totalRetire += montantRetire;
+            totalCommission += commission;
+        }
+    });
+
+    const totalRow = document.querySelector('tr.bg-info');
+    if(totalRow){
+        totalRow.cells[5].textContent = totalRetire.toLocaleString() + " GNF";
+        totalRow.cells[6].textContent = totalCommission.toLocaleString() + " GNF";
+    }
+}
+
+searchInput.addEventListener('keyup', function() {
+    const filter = searchInput.value.toLowerCase();
+
+    rows.forEach(row => {
+        if(row.classList.contains('bg-info')) return;
+
+        const client = row.cells[1].textContent.toLowerCase();
+        const numero = row.cells[0].textContent.toLowerCase();
+        row.style.display = (client.includes(filter) || numero.includes(filter)) ? '' : 'none';
+    });
+
+    updateTotals();
+});
+
+// Initialiser les totaux au chargement
+updateTotals();
+</script>
 {% endblock %}

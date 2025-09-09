@@ -41,7 +41,11 @@ urlpatterns = [
     path('suppression-ticket/', include('finance.urls')),
     path('rechercher-client/', include('finance.urls')),
 
+    path('creation/compte/utilisateur/', include('finance.urls')),
+    path('profil/utilisateur/', include('finance.urls')),
+    path('pass/word/utilisateur/', include('finance.urls')),
 
+    path('pw/utilisateur/', include('finance.urls')),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

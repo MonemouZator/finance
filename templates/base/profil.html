@@ -1,0 +1,148 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block script_fils %}{% endblock %}
+
+{% block body_balise %}
+<body class="hold-transition sidebar-mini">
+{% endblock %}
+
+{% block contenu %}
+<div class="content-wrapper">
+
+  <!-- Messages flash -->
+  <div class="container mt-3">
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+
+  <section class="content-header">
+    <div class="container-fluid">
+      <h2 class="text-center text-primary mt-4">PROFIL UTILISATEUR</h2>
+      <hr class="border-primary">
+    </div>
+  </section>
+
+  <section class="content">
+    <div class="container-fluid">
+      <div class="row">
+      
+        <!-- Colonne gauche : profil -->
+        <div class="col-md-3">
+          <div class="card card-primary card-outline h-100">
+            <div class="card-body box-profile text-center">
+              {% if user.photo %}
+                <img class="profile-user-img img-fluid img-circle" id="preview" src="{{ user.photo.url }}" alt="User photo">
+              {% else %}
+                <img class="profile-user-img img-fluid img-circle" id="preview" src="{% static 'images/default.png' %}" alt="Photo par défaut">
+              {% endif %}
+              <h3 class="profile-username mt-2">{{ user.nom|default:"-" }} {{ user.prenom|default:"-" }}</h3>
+              <p class="text-muted">{{ user.fonction|default:"-" }}</p>
+              <hr>
+              <p><strong>Naissance:</strong> {% if user.date_naissance %}{{ user.date_naissance|date:"d/m/Y" }}{% else %}-{% endif %}</p>
+              <p><strong>Lieu:</strong> {{ user.lieu_naiss|default:"-" }}</p>
+              <p><strong>Sexe:</strong> {{ user.genre|default:"-" }}</p>
+              <p><strong>Contact:</strong> {{ user.telephone|default:"-" }}</p>
+              <p><strong>Email:</strong> {{ user.email|default:"-" }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colonne droite : formulaire -->
+        <div class="col-md-9">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="text-center text-info">Formulaire de modification</h5>
+            </div>
+            <div class="card-body">
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+
+                  <!-- Col gauche -->
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Nom</label>
+                      <input type="text" name="nom" value="{{ user.nom }}" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Prénom</label>
+                      <input type="text" name="prenom" value="{{ user.prenom }}" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Date de naissance</label>
+                      <input type="date" name="date"
+                             value="{% if user.date_naissance %}{{ user.date_naissance|date:'Y-m-d' }}{% endif %}"
+                             class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                      <label>Email</label>
+                      <input type="email" name="email" value="{{ user.email }}" class="form-control" required>
+                    </div>
+                  </div>
+
+                  <!-- Col droite -->
+                  <div class="col-md-6">
+                    <div class="form-group">
+                      <label>Sexe</label>
+                      <select name="sexe" class="form-control">
+                        <option value="Homme" {% if user.genre == "Homme" %}selected{% endif %}>Homme</option>
+                        <option value="Femme" {% if user.genre == "Femme" %}selected{% endif %}>Femme</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label>Téléphone</label>
+                      <input type="text" name="contact" value="{{ user.telephone }}" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                      <label>Lieu de naissance</label>
+                      <input type="text" name="filiation" value="{{ user.lieu_naiss }}" class="form-control">
+                    </div>
+
+                    <div class="form-group">
+                      <label>Photo</label>
+                      <input type="file" name="photo" class="form-control" accept="image/*" onchange="loadPreview(this);">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-center mt-4">
+                  <button type="submit" class="btn btn-success btn-lg px-5">Sauvegarder</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- Script : prévisualisation de l’image -->
+<script>
+  function loadPreview(input) {
+    const preview = document.getElementById('preview');
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        preview.src = e.target.result;
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "base/index.html" %}
+{% load static %}
+
+{% block styl_parent %}
+  <title>utilisateur | Accueil</title>
+
+  <!-- Google Font: Source Sans Pro -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="{% static 'base/plugins/fontawesome-free/css/all.min.css' %}">
+  <!-- DataTables -->
+  <link rel="stylesheet" href="{% static 'base/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css' %}">
+  <link rel="stylesheet" href="{% static 'base/plugins/datatables-responsive/css/responsive.bootstrap4.min.css' %}">
+  <link rel="stylesheet" href="{% static 'base/plugins/datatables-buttons/css/buttons.bootstrap4.min.css' %}">
+  <!-- Theme style -->
+  <link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
+  <link rel="stylesheet" href="{% static 'personnel/creation.css' %}">
+{% endblock %}
+
+{% block body %}
+<body class="hold-transition sidebar-mini layout-fixed">
+ {% endblock body %}
+
+{% block contenu %}
+
+  <!-- Content Wrapper. Contains page content -->
+  <div class="content-wrapper">
+
+  <h2 class="text-center mb-4 mt-3" style="font-size: 2rem; color:rgb(26, 125, 224); font-weight: bold;">CREATION DE COMPTE</h2>
+  <hr style="border: 1px solid #16A085; margin: 20px 0;">
+
+    {% if messages %}
+      <div class="alert alert-info">
+        {% for message in messages %}
+          {{ message }}
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="POST" id="frm" action="{% url 'ajouter_administrateur' %}" enctype="multipart/form-data" class="row mx-3">
+      {% csrf_token %}
+
+      <div class="form-group col-md-6">
+        <label for="nom">Nom :</label>
+        <input type="text" class="form-control" id="nom" name="nom" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="prenom">Prénom :</label>
+        <input type="text" class="form-control" id="prenom" name="prenom" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="username">Identifiant :</label>
+        <input type="text" class="form-control" id="username" name="username" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="password">Mot de passe :</label>
+        <input type="password" class="form-control" id="password" name="password" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="cwp">Confirmer :</label>
+        <input type="password" class="form-control" id="cwp" name="cwp" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="telephone">Téléphone :</label>
+        <input type="text" class="form-control" id="telephone" name="telephone" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="date_naissance">Date de naissance :</label>
+        <input type="date" class="form-control" id="date_naissance" name="date_naissance" required>
+      </div>
+
+      <div class="form-group col-md-6 mb-4">
+        <label for="lieu_naiss">Lieu de naissance :</label>
+        <input type="text" class="form-control" id="lieu_naiss" name="lieu_naiss" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="email">Email :</label>
+        <input type="email" class="form-control" id="email" name="email" required>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="genre">Genre :</label>
+        <select class="form-control" id="genre" name="genre" required>
+        <option value="">Sélectionner un genre</option>
+          <option value="Homme">Homme</option>
+          <option value="Femme">Femme</option>
+        </select>
+      </div>
+
+      <div class="form-group col-md-6">
+      
+        <label for="fonction">Fonction :</label>
+        <select class="form-control" id="fonction" name="fonction" required>
+        <option value="">Sélectionner une fonction</option>
+          <option value="FONDATEUR">ADMIN</option>
+          <option value="DG">USER</option>
+
+        </select>
+      </div>
+
+      <div class="form-group col-md-6">
+        <label for="photo">Photo :</label>
+        <input type="file" class="form-control" id="photo" name="photo">
+      </div>
+      <hr style="border: 1px solid #16A085; margin: 20px 0;">
+
+
+
+<center class="text-center">
+
+  <button type="submit" class="btn btn-primary mt-3" style="font-size: 1.1rem; padding: 10px 20px; border-radius: 8px;">
+    Enregistrer
+  </button>
+</center>
+
+
+    </form>
+   
+    <br><br>
+
+  </div>
+{% endblock %}
+
+{% block scripte %}
+  <!-- jQuery -->
+  <script src="{% static 'base/plugins/jquery/jquery.min.js' %}"></script>
+  <!-- Bootstrap 4 -->
+  <script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+  <!-- DataTables  & Plugins -->
+  <script src="{% static 'base/plugins/datatables/jquery.dataTables.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-responsive/js/dataTables.responsive.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-responsive/js/responsive.bootstrap4.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-buttons/js/dataTables.buttons.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-buttons/js/buttons.bootstrap4.min.js' %}"></script>
+  <script src="{% static 'base/plugins/jszip/jszip.min.js' %}"></script>
+  <script src="{% static 'base/plugins/pdfmake/pdfmake.min.js' %}"></script>
+  <script src="{% static 'base/plugins/pdfmake/vfs_fonts.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-buttons/js/buttons.html5.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-buttons/js/buttons.print.min.js' %}"></script>
+  <script src="{% static 'base/plugins/datatables-buttons/js/buttons.colVis.min.js' %}"></script>
+  <!-- AdminLTE App -->
+  <script src="{% static 'base/js/adminlte.min.js' %}"></script>
+  <!-- AdminLTE for demo purposes -->
+  <script src="{% static 'base/js/demo.js' %}"></script>
+
+  <script>
+    let frm=document.getElementById('frm');
+   
+    frm.addEventListener('submit',(e)=>{
+        let pwd=document.getElementById('password');
+        let cpwd =document.getElementById('cpwd');
+        {% comment %} let fonctionFrm=document.getElementById('fonction-frm');
+        let serviceFrm=document.getElementById('service-frm'); {% endcomment %}
+        valid=true;
+        if (password.value != cpwd.value){
+            valid=false
+            document.getElementById('error').textContent="Les mots de passe ne sont pas identiques"
+        }
+        
+        if (!valid){
+            e.preventDefault();
+        }
+       
+       
+
+    });
+
+</script>
+
+{% endblock %}
