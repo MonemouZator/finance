@@ -82,10 +82,26 @@
           <li class="nav-item"><a href="{% url 'liste_tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_tickets' %}active{% endif %}"><i class="nav-icon fas fa-ticket-alt text-danger"></i><p>Tickets Tontine</p></a></li>
           <li class="nav-item"><a href="{% url 'liste_compte_hebdo' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_compte_hebdo' %}active{% endif %}"><i class="nav-icon fas fa-calendar-week text-purple"></i><p>Compte Hebdomadaire</p></a></li>
           <li class="nav-header">Utilisateur</li>
-          <li class="nav-item"><a href="{% url 'ajouter_administrateur' %}" class="nav-link {% if request.resolver_match.url_name == 'ajouter_administrateur' %}active{% endif %}"><i class="nav-icon fas fa-calendar-week text-purple"></i><p>Creation de Compte </p></a></li>
-          <li class="nav-item"><a href="{% url 'profil' %}" class="nav-link {% if request.resolver_match.url_name == 'profil' %}active{% endif %}"><i class="nav-icon fas fa-calendar-week text-purple"></i><p>Mon profil</p></a></li>
-          <li class="nav-item"><a href="{% url 'change_password' %}" class="nav-link {% if request.resolver_match.url_name == 'change_password' %}active{% endif %}"><i class="nav-icon fas fa-calendar-week text-purple"></i><p>Change le mot de passe</p></a></li>
-         
+            <li class="nav-item">
+              <a href="{% url 'ajouter_administrateur' %}" class="nav-link {% if request.resolver_match.url_name == 'ajouter_administrateur' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-plus text-purple"></i>
+                <p>Création de Compte</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{% url 'profil' %}" class="nav-link {% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-circle text-purple"></i>
+                <p>Mon profil</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{% url 'change_password' %}" class="nav-link {% if request.resolver_match.url_name == 'change_password' %}active{% endif %}">
+                <i class="nav-icon fas fa-key text-purple"></i>
+                <p>Changer le mot de passe</p>
+              </a>
+            </li>
           <li class="nav-item"><a href="{% url 'deconnexion' %}" class="nav-link {% if request.resolver_match.url_name == 'deconnexion' %}active{% endif %}"><i class="nav-icon fas fa-sign-out-alt text-danger"></i><p>Déconnexion</p></a></li>
           
           {% endblock menu_sidebar %}
