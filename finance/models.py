@@ -1,4 +1,10 @@
 from django.db import models
+from cloudinary.models import CloudinaryField
+
+class Administrateur(models.Model):
+    # autres champs...
+    photo = CloudinaryField('image', blank=True, null=True)
+
 
 # Create your models here.
 from django.db import models
@@ -159,7 +165,7 @@ class Administrateur(AbstractUser):
     date_naissance = models.DateField(null=True, blank=True)
     lieu_naiss = models.CharField(max_length=30, db_index=True)
     fonction = models.CharField(max_length=256, choices=TYPE, null=True)
-    photo = models.ImageField(upload_to='photos/', blank=True, null=True)
+    photo = CloudinaryField('image', blank=True, null=True)
     email = models.EmailField(max_length=191, unique=True)
 
     def __str__(self):
