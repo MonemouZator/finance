@@ -1,3 +1,4 @@
+pip==25.2
 asgiref==3.9.1
 Brotli==1.1.0
 cffi==1.17.1
@@ -24,4 +25,5 @@ webencodings==0.5.1
 zopfli==0.2.3.post1
 django-cloudinary-storage
 django-storages==1.14.4
+whitenoise==6.7.0
 
