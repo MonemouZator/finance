@@ -17,13 +17,26 @@
     </div>
   </section>
 
-  <!-- Messages -->
-  <div class="container-fluid">
+  <!-- Messages flash stylés -->
+  <div class="container-fluid mt-3">
     {% if messages %}
       {% for message in messages %}
-        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        <div class="alert alert-dismissible fade show 
+                    {% if message.tags == 'error' %}alert-danger
+                    {% elif message.tags == 'success' %}alert-success
+                    {% elif message.tags == 'warning' %}alert-warning
+                    {% elif message.tags == 'info' %}alert-info
+                    {% else %}alert-secondary{% endif %}" role="alert">
+          <i class="fas 
+                {% if message.tags == 'error' %}fa-times-circle
+                {% elif message.tags == 'success' %}fa-check-circle
+                {% elif message.tags == 'warning' %}fa-exclamation-triangle
+                {% elif message.tags == 'info' %}fa-info-circle
+                {% endif %} mr-2"></i>
           {{ message }}
-          <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
       {% endfor %}
     {% endif %}
@@ -37,22 +50,13 @@
             <i class="fas fa-plus"></i> Adhérent
           </button>
           <div>
-
-            <a href="{% url 'liste_clients_credit' %}" class="btn btn-secondary">
-              <i class=""></i> Credit
-            </a>
-
-            <a href="{% url 'liste_tickets_retire' %}" class="btn btn-secondary">
-              <i class="fas fa-archive"></i> Corbeille
-            </a>
-
-            <a href="{% url 'imprimer_tickets' %}" target="_blank" class="btn btn-success">
-              <i class="fas fa-print"></i>Voir
-            </a>
+            <a href="{% url 'liste_clients_credit' %}" class="btn btn-secondary"><i class="fas fa-coins"></i> Credit</a>
+            <a href="{% url 'liste_tickets_retire' %}" class="btn btn-secondary"><i class="fas fa-archive"></i> Corbeille</a>
+            <a href="{% url 'imprimer_tickets' %}" target="_blank" class="btn btn-success"><i class="fas fa-print"></i> Voir</a>
           </div>
         </div>
 
-        <!-- Modal Ajout -->
+        <!-- Modal Ajout Ticket -->
         <div class="modal fade" id="ajoutModal" tabindex="-1">
           <div class="modal-dialog">
             <div class="modal-content">
@@ -85,10 +89,10 @@
           </div>
         </div>
 
-        <!-- Tableau des tickets -->
+        <!-- Tableau Tickets -->
         <div class="card-body table-responsive">
-          <!-- Champ de recherche -->
-          <div class="form-group">
+          <!-- Recherche -->
+          <div class="form-group mb-3">
             <form method="get" action="" class="d-flex">
               <input type="text" name="q" value="{{ query }}" class="form-control mr-2" placeholder="Rechercher par client ou numéro...">
               <button type="submit" class="btn btn-primary">Rechercher</button>
@@ -96,7 +100,7 @@
           </div>
 
           <table class="table table-bordered table-striped">
-            <thead class="bg-primary">
+            <thead class="bg-primary text-white">
               <tr>
                 <th>N°</th>
                 <th>Client</th>
@@ -123,7 +127,7 @@
                 <td>{{ ticket.jours_verse }}/{{ ticket.nombre_jours_total }}</td>
                 <td>{{ ticket.total_verse|floatformat:0 }} GNF</td>
                 <td class="d-flex flex-wrap">
-
+                  
                   <!-- Ajouter Versement -->
                   {% if ticket.jours_verse < ticket.nombre_jours_total %}
                   <a href="{% url 'ajouter_jour_ticket' ticket.id %}" class="btn btn-success btn-sm mr-1 mb-1" title="Ajouter Versement">
@@ -131,13 +135,12 @@
                   </a>
                   {% endif %}
 
-                  <!-- Retrait avec modal avertissement crédit -->
+                  <!-- Retrait -->
                   {% if ticket.jours_verse >= 2 %}
                   <button class="btn btn-warning btn-sm mr-1 mb-1" data-toggle="modal" data-target="#avertissementCredit{{ ticket.id }}" title="Retrait">
                     <i class="fas fa-hand-holding-dollar"></i>
                   </button>
 
-                  <!-- Modal Avertissement Crédit -->
                   <div class="modal fade" id="avertissementCredit{{ ticket.id }}" tabindex="-1">
                     <div class="modal-dialog">
                       <div class="modal-content">
@@ -165,12 +168,11 @@
                   </div>
                   {% endif %}
 
-                  <!-- Modifier -->
+                  <!-- Modifier Ticket -->
                   <button class="btn btn-outline-primary btn-sm mr-1 mb-1" data-toggle="modal" data-target="#mod{{ ticket.id }}">
                     <i class="fas fa-edit"></i>
                   </button>
 
-                  <!-- Modal Modifier -->
                   <div class="modal fade" id="mod{{ ticket.id }}" tabindex="-1">
                     <div class="modal-dialog">
                       <div class="modal-content">
@@ -199,7 +201,6 @@
                     <i class="fas fa-coins"></i>
                   </button>
 
-                  <!-- Modal Ajouter Crédit -->
                   <div class="modal fade" id="creditModal{{ ticket.id }}" tabindex="-1">
                     <div class="modal-dialog">
                       <div class="modal-content">
@@ -238,15 +239,15 @@
 
             <!-- Totaux -->
             <tfoot>
-              <tr class="bg-info">
+              <tr class="bg-info text-white">
                 <th colspan="5">TOTAL GENERAL VERSÉ</th>
                 <th>{{ total_verse|floatformat:0 }} GNF</th>
               </tr>
-              <tr class="bg-success">
+              <tr class="bg-success text-white">
                 <th colspan="5">TOTAL RETIRABLE</th>
                 <th>{{ total_retirable|floatformat:0 }} GNF</th>
               </tr>
-              <tr class="bg-warning">
+              <tr class="bg-warning text-white">
                 <th colspan="5">TOTAL COMMISSION</th>
                 <th>{{ total_commission|floatformat:0 }} GNF</th>
               </tr>
