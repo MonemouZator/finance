@@ -416,22 +416,27 @@ def impression_tickets(request):
     })
 
 
+from decimal import Decimal
+from django.shortcuts import render
+from django.db.models import Sum
+from django.core.paginator import Paginator
+from .models import TicketRetire, TicketCredit
+
 def liste_tickets_retire(request):
-    tickets_retire = TicketRetire.objects.all().order_by('-date_retrait')
+    tickets_retire_all = TicketRetire.objects.all().order_by('-date_retrait')
 
     total_general = Decimal("0.00")
     total_commission = Decimal("0.00")
-    commission_taux = Decimal("1")
+    commission_taux = Decimal("1")  # 1 jour = 100%
 
     tickets_data = []
-    for t in tickets_retire:
-        commission = t.montant_journalier  # 1 jour comme commission
+
+    for t in tickets_retire_all:
+        commission = t.montant_journalier
         total_apres_commission = t.total_retiré - commission
 
         # Crédit associé au ticket
-        total_credit = TicketCredit.objects.filter(ticket=t.ticket).aggregate(
-            total=Sum('montant')
-        )['total'] or Decimal("0.00")
+        total_credit = TicketCredit.objects.filter(ticket=t.ticket).aggregate(total=Sum('montant'))['total'] or Decimal("0.00")
 
         # Retirable = total_apres_commission - total_credit
         total_retirable = total_apres_commission - total_credit
@@ -449,12 +454,20 @@ def liste_tickets_retire(request):
             "total_retirable": total_retirable,
         })
 
+    # Pagination
+    paginator = Paginator(tickets_data, 10)  # 10 tickets par page
+    page_number = request.GET.get('page')
+    tickets_page = paginator.get_page(page_number)
+
     context = {
-        "tickets_retire": tickets_data,
+        "tickets_retire": tickets_page,  # Pour le template
         "total_general": total_general,
         "total_commission": total_commission,
         "commission_taux": commission_taux * 100,
+        "tickets_data": tickets_data,  # Optionnel si besoin
+        "tickets_page": tickets_page,  # Pour la pagination
     }
+
     return render(request, "base/ticket_retire.html", context)
 
 def ajouter_credit(request, ticket_id):
