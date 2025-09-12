@@ -85,7 +85,7 @@ WSGI_APPLICATION = 'boutique.wsgi.application'
 #     }
 # }
 
-# Configuration de SGBD avec Mysql mais par defaut python utilise sqlite
+#Configuration de SGBD avec Mysql mais par defaut python utilise sqlite
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.mysql',

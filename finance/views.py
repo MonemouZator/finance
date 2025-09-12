@@ -128,17 +128,25 @@ def charge_effectue(request):
     }
     return render(request, 'base/charge.html', context)
 
-
 def ajout_charge(request):
     if request.method == 'POST':
+        # Vérifier le nombre de charges existantes
+        nb_charges = Operation.objects.count()
+        if nb_charges >= 10:
+            messages.error(request, "Impossible d'ajouter une nouvelle charge : le nombre de charges a atteint 15.")
+            return redirect('charge')
+
+        # Création de la charge
         Operation.objects.create(
             date=request.POST.get('date'),
-            libelle=request.POST.get('lebelle'),
+            libelle=request.POST.get('lebelle'),   # attention à l'orthographe "libelle"
             montant=request.POST.get('solde'),
             Observation=request.POST.get('observe'),
         )
         messages.success(request, "Charge ajoutée avec succès !")
+    
     return redirect('charge')
+
 
 
 def modifier_charge(request, pk):
@@ -160,9 +168,9 @@ def supprimer_charge(request, pk):
     return redirect('charge')
 
 # ---------------- COMPTE CREDIT ----------------
-def compte_credit(request):
-    credits = CompteCredit.objects.all()
-    return render(request, 'base/compte_credit.html', {'credits': credits})
+# def compte_credit(request):
+#     credits = CompteCredit.objects.all()
+#     return render(request, 'base/compte_credit.html', {'credits': credits})
 
 # ---------------- COMPTE CREDIT ----------------
 def compte_credit(request):
@@ -173,8 +181,15 @@ def compte_credit(request):
         'total_general': total_general
     })
 
+
 def ajout_compte_credit(request):
     if request.method == 'POST':
+        # Vérifier le nombre de comptes crédit
+        nb_credits = CompteCredit.objects.count()
+        if nb_credits >= 15:
+            messages.error(request, "Impossible d'ajouter un nouveau compte : le nombre de comptes crédit a atteint 15.")
+            return redirect('credit')
+
         nom = request.POST.get('nom')
         date = request.POST.get('date')
         solde = request.POST.get('solde')
@@ -191,7 +206,7 @@ def ajout_compte_credit(request):
         else:
             messages.error(request, "Tous les champs obligatoires doivent être remplis.")
     
-    return redirect('credit')  # Assurez-vous que l'URL name="credit"
+    return redirect('credit')
 
 def modifier_compte_credit(request, pk):
     credit = get_object_or_404(CompteCredit, id=pk)
@@ -220,8 +235,15 @@ def compte_debit(request):
         'total_general': total_general
     })
 
+
 def ajout_compte_debit(request):
     if request.method == 'POST':
+        # Vérifier le nombre de comptes débit
+        nb_debits = CompteDebit.objects.count()
+        if nb_debits >= 15:
+            messages.error(request, "Impossible d'ajouter un nouveau compte : le nombre de comptes débit a atteint 15.")
+            return redirect('debit')
+
         nom = request.POST.get('nom')
         date = request.POST.get('date')
         solde = request.POST.get('solde')
@@ -239,6 +261,7 @@ def ajout_compte_debit(request):
             messages.error(request, "Tous les champs obligatoires doivent être remplis.")
     
     return redirect('debit')
+
 
 def modifier_compte_debit(request, pk):
     debit = get_object_or_404(CompteDebit, id=pk)
@@ -428,34 +451,39 @@ def liste_tickets_retire(request):
     return render(request, "base/ticket_retire.html", context)
 
 
+from decimal import Decimal, InvalidOperation
+
 def ajouter_credit(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
     if request.method == "POST":
-        montant = Decimal(request.POST.get("montant"))
-        total_verse = ticket.total_verse
+        try:
+            montant = Decimal(request.POST.get("montant", "0"))
+        except (InvalidOperation, TypeError):
+            messages.error(request, "Montant invalide.")
+            return redirect("liste_tickets")
+
+        total_verse = ticket.total_verse or Decimal("0")
+
+        # Vérifier si un crédit existe déjà
+        if TicketCredit.objects.filter(ticket=ticket).exists():
+            messages.error(request, f"Un crédit existe déjà pour {ticket.client}.")
+            return redirect("liste_tickets")
 
         if montant <= 0:
-            messages.error(request, "Montant invalide.")
-        elif montant > total_verse:
-            messages.error(request, "Le montant du crédit ne peut pas dépasser le total versé.")
+            messages.error(request, "Le montant doit être supérieur à 0.")
+        elif montant > (total_verse / 2):
+            messages.error(
+                request,
+                f"Le montant du crédit ne peut pas dépasser la moitié du total versé ({total_verse/2} GNF)."
+            )
         else:
-            # Crée un crédit lié au ticket
             TicketCredit.objects.create(ticket=ticket, montant=montant)
             messages.success(request, f"Crédit de {montant} GNF ajouté pour {ticket.client}.")
 
-    return redirect("liste_tickets")  # Nom de la page liste des tickets
+    return redirect("liste_tickets")
 
 
-# views.py
-from django.shortcuts import render
-from django.core.paginator import Paginator
-from django.db.models import Sum
-from .models import Ticket  # ou le nom correct de ton modèle
-
-from django.core.paginator import Paginator
-from django.shortcuts import render
-from decimal import Decimal
 
 def liste_clients_credit(request):
     query = request.GET.get('q', '')
@@ -668,7 +696,7 @@ def ajout_administrateur(request):
 #PROFIL ET CHANGEMENTS DES INFORMATION DE L'UTILISATEUR CONNECTER
 
 def profil_user(request):
-    user = request.user  # utilisateur connecté
+    user = request.user
 
     if request.method == "POST":
         user.nom = request.POST.get("nom", user.nom).strip()
@@ -678,45 +706,29 @@ def profil_user(request):
         user.telephone = request.POST.get("contact", user.telephone).strip()
         user.lieu_naiss = request.POST.get("filiation", user.lieu_naiss).strip()
 
-        # Vérif email/téléphone unique
-        if Administrateur.objects.filter(email=user.email).exclude(pk=user.pk).exists():
-            messages.error(request, "Cet email est déjà utilisé.")
-            return redirect("profil")
-
-        if Administrateur.objects.filter(telephone=user.telephone).exclude(pk=user.pk).exists():
-            messages.error(request, "Ce numéro est déjà utilisé.")
-            return redirect("profil")
-
-        # Date de naissance
         date_str = request.POST.get("date")
         if date_str:
             try:
                 user.date_naissance = datetime.strptime(date_str, "%Y-%m-%d").date()
             except ValueError:
-                messages.error(request, "Format de date invalide. Utilise AAAA-MM-JJ.")
+                messages.error(request, "Format de date invalide.")
 
-        # Photo
         if "photo" in request.FILES:
             user.photo = request.FILES["photo"]
 
-        try:
-            user.save()
-            messages.success(request, "Votre profil a été mis à jour avec succès.")
-        except Exception as e:
-            messages.error(request, f"Erreur lors de la sauvegarde : {e}")
-
+        user.save()
+        messages.success(request, "Votre profil a été mis à jour avec succès.")
         return redirect("profil")
 
-    # 🔹 NE PAS passer {"user": user} (conflit avec request.user)
     return render(request, "base/profil.html")
+
 
 
 #FONCTION DE CHANGEMENT DE MOT DE PASSE DE L'UTILISATEUR COURANT
 
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import logout, authenticate, login
-from django.shortcuts import render, redirect
-from django.contrib import messages
+
+
 
 @login_required
 def change_password(request):
