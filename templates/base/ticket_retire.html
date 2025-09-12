@@ -48,6 +48,8 @@
                 <th>Montant Journalier</th>
                 <th>Jours Versés</th>
                 <th>Total Retiré</th>
+                <th>Crédit</th>
+                <th>Total Retirable</th>
                 <th>Commission ({{ commission_taux }}%)</th>
                 <th>Date Retrait</th>
               </tr>
@@ -67,18 +69,20 @@
                 <td>{{ data.ticket.montant_journalier|floatformat:0 }} GNF</td>
                 <td>{{ data.ticket.jours_verse }}/{{ data.ticket.nombre_jours_total }}</td>
                 <td>{{ data.total_apres_commission|floatformat:0 }} GNF</td>
+                <td>{{ data.total_credit|floatformat:0 }} GNF</td>
+                <td>{{ data.total_retirable|floatformat:0 }} GNF</td>
                 <td>{{ data.commission|floatformat:0 }} GNF</td>
                 <td>{{ data.ticket.date_retrait|date:"d/m/Y H:i" }}</td>
               </tr>
               {% empty %}
               <tr>
-                <td colspan="8" class="text-center">Aucun ticket retiré</td>
+                <td colspan="10" class="text-center">Aucun ticket retiré</td>
               </tr>
               {% endfor %}
 
               <!-- Ligne des totaux -->
               <tr class="bg-info font-weight-bold">
-                <td colspan="5" class="text-right">TOTAL RETIRABLE :</td>
+                <td colspan="7" class="text-right">TOTAL RETIRABLE :</td>
                 <td id="totalRetirable">{{ total_general|floatformat:0 }} GNF</td>
                 <td id="totalCommission">{{ total_commission|floatformat:0 }} GNF</td>
                 <td></td>
@@ -132,8 +136,8 @@
 <script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'base/js/adminlte.min.js' %}"></script>
 
-<!-- Filtre automatique client/numéro et recalcul des totaux -->
 <script>
+// Filtre automatique client/numéro et recalcul des totaux
 const searchInput = document.getElementById('searchInput');
 const rows = document.querySelectorAll('table tbody tr');
 
@@ -143,8 +147,8 @@ function updateTotals() {
 
     rows.forEach(row => {
         if(row.style.display !== 'none' && !row.classList.contains('bg-info')) {
-            const montantRetirable = parseFloat(row.cells[5].textContent.replace(/\s|GNF/g, '')) || 0;
-            const commission = parseFloat(row.cells[6].textContent.replace(/\s|GNF/g, '')) || 0;
+            const montantRetirable = parseFloat(row.cells[7].textContent.replace(/\s|GNF/g, '')) || 0;
+            const commission = parseFloat(row.cells[8].textContent.replace(/\s|GNF/g, '')) || 0;
 
             totalRetirable += montantRetirable;
             totalCommission += commission;
