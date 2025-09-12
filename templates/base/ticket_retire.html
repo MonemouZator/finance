@@ -78,9 +78,9 @@
 
               <!-- Ligne des totaux -->
               <tr class="bg-info font-weight-bold">
-                <td colspan="5" class="text-right">TOTAL :</td>
-                <td>{{ total_general|floatformat:0 }} GNF</td>
-                <td>{{ total_commission|floatformat:0 }} GNF</td>
+                <td colspan="5" class="text-right">TOTAL RETIRABLE :</td>
+                <td id="totalRetirable">{{ total_general|floatformat:0 }} GNF</td>
+                <td id="totalCommission">{{ total_commission|floatformat:0 }} GNF</td>
                 <td></td>
               </tr>
             </tbody>
@@ -132,30 +132,30 @@
 <script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'base/js/adminlte.min.js' %}"></script>
 
-<!-- Filtre automatique client/numéro -->
+<!-- Filtre automatique client/numéro et recalcul des totaux -->
 <script>
 const searchInput = document.getElementById('searchInput');
 const rows = document.querySelectorAll('table tbody tr');
 
 function updateTotals() {
-    let totalRetire = 0;
+    let totalRetirable = 0;
     let totalCommission = 0;
 
     rows.forEach(row => {
         if(row.style.display !== 'none' && !row.classList.contains('bg-info')) {
-            const montantRetire = parseFloat(row.cells[5].textContent.replace(/\s|GNF/g, '')) || 0;
+            const montantRetirable = parseFloat(row.cells[5].textContent.replace(/\s|GNF/g, '')) || 0;
             const commission = parseFloat(row.cells[6].textContent.replace(/\s|GNF/g, '')) || 0;
 
-            totalRetire += montantRetire;
+            totalRetirable += montantRetirable;
             totalCommission += commission;
         }
     });
 
-    const totalRow = document.querySelector('tr.bg-info');
-    if(totalRow){
-        totalRow.cells[5].textContent = totalRetire.toLocaleString() + " GNF";
-        totalRow.cells[6].textContent = totalCommission.toLocaleString() + " GNF";
-    }
+    const totalRetirableCell = document.getElementById('totalRetirable');
+    const totalCommissionCell = document.getElementById('totalCommission');
+
+    if(totalRetirableCell) totalRetirableCell.textContent = totalRetirable.toLocaleString() + " GNF";
+    if(totalCommissionCell) totalCommissionCell.textContent = totalCommission.toLocaleString() + " GNF";
 }
 
 searchInput.addEventListener('keyup', function() {

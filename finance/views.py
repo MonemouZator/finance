@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate, login,logout
 from django.core.exceptions import ValidationError
 from .models import ValeurAjoutee, Operation, CompteCredit, CompteDebit,TicketRetire,CompteHebdomadaire,TicketCredit
 from finance.models import Administrateur
+from decimal import Decimal, InvalidOperation
 
 
 def page_accueil(request):
@@ -399,10 +400,6 @@ def retirer_ticket(request, pk):
     return redirect('liste_tickets')
 
 
-
-
-
-
 def impression_tickets(request):
     tickets = Ticket.objects.all()
     
@@ -419,39 +416,46 @@ def impression_tickets(request):
     })
 
 
-
 def liste_tickets_retire(request):
     tickets_retire = TicketRetire.objects.all().order_by('-date_retrait')
 
     total_general = Decimal("0.00")
     total_commission = Decimal("0.00")
-    commission_taux = Decimal("1")  # 1 jour = 100%
+    commission_taux = Decimal("1")
 
-    # Préparer la liste avec total_apres_commission et commission
     tickets_data = []
     for t in tickets_retire:
         commission = t.montant_journalier  # 1 jour comme commission
         total_apres_commission = t.total_retiré - commission
 
-        total_general += total_apres_commission
+        # Crédit associé au ticket
+        total_credit = TicketCredit.objects.filter(ticket=t.ticket).aggregate(
+            total=Sum('montant')
+        )['total'] or Decimal("0.00")
+
+        # Retirable = total_apres_commission - total_credit
+        total_retirable = total_apres_commission - total_credit
+        if total_retirable < 0:
+            total_retirable = Decimal("0.00")
+
+        total_general += total_retirable
         total_commission += commission
 
         tickets_data.append({
             "ticket": t,
             "total_apres_commission": total_apres_commission,
             "commission": commission,
+            "total_credit": total_credit,
+            "total_retirable": total_retirable,
         })
 
     context = {
         "tickets_retire": tickets_data,
         "total_general": total_general,
         "total_commission": total_commission,
-        "commission_taux": commission_taux * 100,  # affichage dans template
+        "commission_taux": commission_taux * 100,
     }
     return render(request, "base/ticket_retire.html", context)
-
-
-from decimal import Decimal, InvalidOperation
 
 def ajouter_credit(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
