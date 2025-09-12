@@ -7,55 +7,133 @@
 
   {% block styl_parent %}
   <title>Dashboard | Finance</title>
-  <!-- Google Font -->
+
+  <!-- Google Font: Source Sans Pro -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
   <!-- Font Awesome -->
   <link rel="stylesheet" href="{% static 'base/plugins/fontawesome-free/css/all.min.css' %}">
-  <!-- AdminLTE -->
+  <!-- Theme style -->
   <link rel="stylesheet" href="{% static 'base/css/adminlte.min.css' %}">
   <!-- overlayScrollbars -->
   <link rel="stylesheet" href="{% static 'base/plugins/overlayScrollbars/css/OverlayScrollbars.min.css' %}">
-  <!-- Swiper CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
-  <style>
-    .swiper { width: 100%; padding: 20px 0; }
-    .swiper-slide { display: flex; justify-content: space-around; flex-wrap: wrap; }
-    .small-box { flex: 1 1 45%; margin: 10px; min-width: 200px; }
-  </style>
   {% endblock styl_parent %}
 </head>
 
+{% block body %}
 <body class="hold-transition sidebar-mini layout-fixed">
+{% endblock body %}
+
 <div class="wrapper">
-  <!-- Navbar et Sidebar ici (inchangés) -->
+
+  <!-- Navbar -->
+  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+    <ul class="navbar-nav">
+      <li class="nav-item">
+        <a class="nav-link" data-widget="pushmenu" href="javascript:void(0);"><i class="fas fa-bars"></i></a>
+      </li>
+      <li class="nav-item d-none d-sm-inline-block">
+        <a href="{% url 'page_acceil' %}" class="nav-link">Accueil</a>
+      </li>
+    </ul>
+    <ul class="navbar-nav ml-auto">
+      <li class="nav-item"><a class="nav-link" href="#"><i class="fas fa-search"></i></a></li>
+    </ul>
+  </nav>
+
   {% block aside %}
-  <!-- ... ton code de sidebar ... -->
+  <!-- Sidebar -->
+  <aside class="main-sidebar sidebar-dark-primary elevation-4">
+
+    <div class="sidebar">
+      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+  <div class="image">
+    {% if request.user.photo %}
+      <img src="{{ request.user.photo.url }}" class="img-circle elevation-2" alt="User Image">
+    {% else %}
+      <img src="{% static 'images/default-avatar.png' %}" class="img-circle elevation-2" alt="User Image">
+    {% endif %}
+  </div>
+  <div class="info">
+    <a href="#" class="d-block">
+      {% if request.user.first_name or request.user.last_name %}
+        {{ request.user.first_name }} {{ request.user.last_name }}
+      {% else %}
+        {{ request.user.username }}
+      {% endif %}
+    </a>
+  </div>
+</div>
+
+      <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu">
+          {% block menu_sidebar %}
+
+          <li class="nav-header">GESTION FINANCIÈRE</li>
+          <li class="nav-item">
+            <a href="{%url 'page_acceil' %}" class="nav-link {% if request.resolver_match.url_name == 'page_acceil' %}active{% endif %}">
+              <i class="nav-icon fas fa-tachometer-alt"></i>
+              <p>Tableau de bord</p>
+            </a>
+          </li>
+          <li class="nav-item"><a href="{% url 'valeur-ajouter' %}" class="nav-link {% if request.resolver_match.url_name == 'valeur-ajouter' %}active{% endif %}"><i class="nav-icon fas fa-plus-circle text-info"></i><p>Valeur ajoutée</p></a></li>
+          <li class="nav-item"><a href="{% url 'charge' %}" class="nav-link {% if request.resolver_match.url_name == 'charge' %}active{% endif %}"><i class="nav-icon fas fa-money-bill-wave text-success"></i><p>Charges</p></a></li>
+          <li class="nav-item"><a href="{% url 'credit' %}" class="nav-link {% if request.resolver_match.url_name == 'credit' %}active{% endif %}"><i class="nav-icon fas fa-piggy-bank text-primary"></i><p>Compte Crédit</p></a></li>
+          <li class="nav-item"><a href="{% url 'debit' %}" class="nav-link {% if request.resolver_match.url_name == 'debit' %}active{% endif %}"><i class="nav-icon fas fa-hand-holding-usd text-warning"></i><p>Compte Débit</p></a></li>
+          <li class="nav-item"><a href="{% url 'liste_tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_tickets' %}active{% endif %}"><i class="nav-icon fas fa-ticket-alt text-danger"></i><p>Tickets Tontine</p></a></li>
+          <li class="nav-item"><a href="{% url 'liste_compte_hebdo' %}" class="nav-link {% if request.resolver_match.url_name == 'liste_compte_hebdo' %}active{% endif %}"><i class="nav-icon fas fa-calendar-week text-purple"></i><p>Compte Hebdomadaire</p></a></li>
+          <li class="nav-header">Utilisateur</li>
+            <li class="nav-item">
+              <a href="{% url 'ajouter_administrateur' %}" class="nav-link {% if request.resolver_match.url_name == 'ajouter_administrateur' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-plus text-purple"></i>
+                <p>Création de Compte</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{% url 'profil' %}" class="nav-link {% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
+                <i class="nav-icon fas fa-user-circle text-purple"></i>
+                <p>Mon profil</p>
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="{% url 'change_password' %}" class="nav-link {% if request.resolver_match.url_name == 'change_password' %}active{% endif %}">
+                <i class="nav-icon fas fa-key text-purple"></i>
+                <p>Changer le mot de passe</p>
+              </a>
+            </li>
+          <li class="nav-item"><a href="{% url 'deconnexion' %}" class="nav-link {% if request.resolver_match.url_name == 'deconnexion' %}active{% endif %}"><i class="nav-icon fas fa-sign-out-alt text-danger"></i><p>Déconnexion</p></a></li>
+          
+          {% endblock menu_sidebar %}
+        </ul>
+      </nav>
+    </div>
+  </aside>
   {% endblock aside %}
 
   {% block contenu %}
+  <!-- Content Wrapper -->
   <div class="content-wrapper">
     <section class="content">
       <div class="container-fluid">
-        <!-- Swiper Slider -->
-        <div class="swiper mySwiper">
-          <div class="swiper-wrapper">
-            <div class="swiper-slide">
-              <div class="small-box bg-info"><div class="inner"><h3>{{ montant_valeurs|default:"0" }}</h3><p>Valeurs Ajoutées</p></div><div class="icon"><i class="ion ion-bag"></i></div></div>
-              <div class="small-box bg-success"><div class="inner"><h3>{{ montant_credit|default:"0" }}</h3><p>Total Crédit</p></div><div class="icon"><i class="ion ion-stats-bars"></i></div></div>
-            </div>
-            <div class="swiper-slide">
-              <div class="small-box bg-warning"><div class="inner"><h3>{{ montant_debit|default:"0" }}</h3><p>Total Débit</p></div><div class="icon"><i class="ion ion-person-add"></i></div></div>
-              <div class="small-box bg-danger"><div class="inner"><h3>{{ montant_tickets|default:"0" }}</h3><p>Total Tickets</p></div><div class="icon"><i class="ion ion-pie-graph"></i></div></div>
-            </div>
+        <!-- Montants -->
+        <div class="row">
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-info"><div class="inner"><h3>{{ montant_valeurs|default:"0" }} </h3><p>Valeurs Ajoutées</p></div><div class="icon"><i class="ion ion-bag"></i></div></div>
           </div>
-          <!-- Pagination et flèches -->
-          <div class="swiper-pagination"></div>
-          <div class="swiper-button-next"></div>
-          <div class="swiper-button-prev"></div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-success"><div class="inner"><h3>{{ montant_credit|default:"0" }} </h3><p>Total Crédit</p></div><div class="icon"><i class="ion ion-stats-bars"></i></div></div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-warning"><div class="inner"><h3>{{ montant_debit|default:"0" }} </h3><p>Total Débit</p></div><div class="icon"><i class="ion ion-person-add"></i></div></div>
+          </div>
+          <div class="col-lg-3 col-6">
+            <div class="small-box bg-danger"><div class="inner"><h3>{{ montant_tickets|default:"0" }} </h3><p>Total Tickets</p></div><div class="icon"><i class="ion ion-pie-graph"></i></div></div>
+          </div>
         </div>
 
-        <!-- Graphiques (toujours visibles) -->
-        <div class="row mt-4">
+        <!-- Graphiques -->
+        <div class="row">
           <div class="col-md-6"><div class="card"><div class="card-header"><h3 class="card-title">Valeurs Ajoutées</h3></div><div class="card-body"><canvas id="chartValeurs" style="height:200px;"></canvas></div></div></div>
           <div class="col-md-6"><div class="card"><div class="card-header"><h3 class="card-title">Crédits</h3></div><div class="card-body"><canvas id="chartCredits" style="height:200px;"></canvas></div></div></div>
         </div>
@@ -68,6 +146,7 @@
   </div>
   {% endblock contenu %}
 
+  <!-- Footer -->
   <footer class="main-footer">
     <strong>Copyright &copy; 2024-2025 zm-benz</strong> Tout droit réservé.
     <div class="float-right d-none d-sm-inline-block"><b>Version</b> 1.0.0</div>
@@ -79,8 +158,6 @@
 <script src="{% static 'base/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'base/plugins/chart.js/Chart.min.js' %}"></script>
 <script src="{% static 'base/js/adminlte.min.js' %}"></script>
-<!-- Swiper JS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -89,7 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var montant_debit = parseFloat('{{ montant_debit|default:"0" }}');
     var montant_tickets = parseFloat('{{ montant_tickets|default:"0" }}');
 
-    // Charts
     new Chart(document.getElementById('chartValeurs'), {
         type:'doughnut',
         data:{labels:['Valeurs','Autres'],datasets:[{data:[montant_valeurs,0],backgroundColor:['#17a2b8','#f0f0f0']}]},
@@ -110,18 +186,9 @@ document.addEventListener('DOMContentLoaded', function() {
         data:{labels:['Tickets','Autres'],datasets:[{data:[montant_tickets,0],backgroundColor:['#dc3545','#f0f0f0']}]},
         options:{responsive:true,maintainAspectRatio:false}
     });
-
-    // Swiper slider
-    var swiper = new Swiper(".mySwiper", {
-        slidesPerView: 1,
-        spaceBetween: 30,
-        loop: true,
-        navigation: { nextEl: ".swiper-button-next", prevEl: ".swiper-button-prev" },
-        pagination: { el: ".swiper-pagination", clickable: true },
-        autoplay: { delay: 4000, disableOnInteraction: false }
-    });
 });
 </script>
 {% endblock scripte %}
+
 </body>
 </html>
