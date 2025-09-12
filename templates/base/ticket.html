@@ -212,8 +212,8 @@
                           {% csrf_token %}
                           <div class="modal-body">
                             <div class="form-group">
-                              <label>Montant du Crédit (≤ {{ ticket.total_verse|floatformat:0 }} GNF) :</label>
-                              <input type="number" class="form-control" name="montant" max="{{ ticket.total_verse }}" required>
+                              <label>Montant du Crédit (≤ {{ ticket.total_verse/2|floatformat:0 }} GNF) :</label>
+                              <input type="number" class="form-control" name="montant" max="{{ ticket.total_verse/2 }}" required>
                             </div>
                             {% if ticket.total_credit > 0 %}
                               <p>Attention : ce client a déjà un crédit actif de <strong>{{ ticket.total_credit|floatformat:0 }} GNF</strong>.</p>
