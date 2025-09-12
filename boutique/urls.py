@@ -10,7 +10,6 @@ urlpatterns = [
 
     # Inclure toutes les URLs de l'app finance
     path('', include('finance.urls')),
-    
 
     # ------------------- Valeur Ajoutée -------------------
     path('valeur-ajouter/', include('finance.urls')),

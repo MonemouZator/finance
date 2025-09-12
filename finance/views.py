@@ -412,11 +412,10 @@ def impression_tickets(request):
     })
 
 
-from decimal import Decimal
-from django.shortcuts import render
 from django.db.models import Sum
+from decimal import Decimal
 from django.core.paginator import Paginator
-from .models import TicketRetire, TicketCredit
+from django.shortcuts import render
 
 def liste_tickets_retire(request):
     tickets_retire_all = TicketRetire.objects.all().order_by('-date_retrait')
@@ -430,8 +429,7 @@ def liste_tickets_retire(request):
     for t in tickets_retire_all:
         commission = t.montant_journalier
         total_apres_commission = t.total_retiré - commission
-
-        total_credit = t.total_credit  # ✅ utiliser le champ déjà présent
+        total_credit = t.total_credit  
 
         total_retirable = total_apres_commission - total_credit
         if total_retirable < 0:
@@ -448,6 +446,13 @@ def liste_tickets_retire(request):
             "total_retirable": total_retirable,
         })
 
+    # ✅ Total versé par client
+    total_par_client = (
+        TicketRetire.objects.values("client__nom")   # adapte selon ton modèle
+        .annotate(total_verse=Sum("total_retiré"))
+        .order_by("client__nom")
+    )
+
     # Pagination
     paginator = Paginator(tickets_data, 10)
     page_number = request.GET.get('page')
@@ -458,9 +463,11 @@ def liste_tickets_retire(request):
         "total_general": total_general,
         "total_commission": total_commission,
         "commission_taux": commission_taux * 100,
+        "total_par_client": total_par_client,  # ✅ envoyé au template
     }
 
     return render(request, "base/ticket_retire.html", context)
+
 
 def ajouter_credit(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
@@ -490,9 +497,8 @@ def ajouter_credit(request, ticket_id):
             TicketCredit.objects.create(ticket=ticket, montant=montant)
             messages.success(request, f"Crédit de {montant} GNF ajouté pour {ticket.client}.")
 
+
     return redirect("liste_tickets")
-
-
 
 def liste_clients_credit(request):
     query = request.GET.get('q', '')
